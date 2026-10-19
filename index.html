@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>eduplan — цифровой школьный планировщик</title>
@@ -14,7 +17,6 @@
   <meta property="og:locale" content="ru_RU">
   <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -1124,7 +1126,14 @@
     // ---------- Supabase ----------
     const SUPABASE_URL = 'https://lhdqptvqpvecoouxjnpw.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_4hDZ3w1hYmQ1RCWu1Ge5ug_Q_n7bivL';
-    const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        storage: window.localStorage
+      }
+    }) : null;
     if (sbClient) {
       console.log("Supabase успешно подключен!", sbClient);
     } else {
@@ -1172,16 +1181,31 @@
 
     async function checkUser() {
       if (!sbClient) return;
-      const { data: { user } } = await sbClient.auth.getUser();
+
+      let session = null;
+      try {
+        const { data, error } = await sbClient.auth.getSession();
+        if (!error && data) {
+          session = data.session;
+        }
+      } catch (e) {
+        console.log("Локальная сессия проверяется...");
+      }
+
+      const currentUser = session ? session.user : null;
+
       const formDiv = $('auth-form');
       const userDiv = $('user-logged-in');
       const emailSpan = $('user-email-display');
-      if (user) {
+
+      if (currentUser) {
         if (formDiv) formDiv.style.display = 'none';
         if (userDiv) userDiv.style.display = 'block';
-        if (emailSpan) emailSpan.textContent = user.email;
-        console.log("Текущий пользователь ID:", user.id);
-        loadFromCloud(user.id);
+        if (emailSpan) emailSpan.textContent = currentUser.email;
+
+        console.log("Сессия подтверждена! Текущий пользователь ID:", currentUser.id);
+
+        await loadFromCloud(currentUser.id);
       } else {
         if (formDiv) formDiv.style.display = 'block';
         if (userDiv) userDiv.style.display = 'none';
