@@ -16,6 +16,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #090b14;
@@ -969,12 +970,30 @@
         <input type="file" id="importFile" accept=".json,application/json" style="display:none;">
       </div>
       <button class="btn-act" id="btnUndoImport" style="width:100%; margin-top:8px; display:none;" onclick="undoImport()">отменить последний импорт</button>
-      <div class="hint-box">
-        <b>сделайте копию.</b> задания хранятся только в этом браузере на этом устройстве.
-        они не переносятся сами на другой компьютер и исчезнут, если очистить
-        данные браузера. нажмите «экспорт», чтобы сохранить файл с данными — его можно
-        загрузить обратно кнопкой «импорт» или перенести на другое устройство.
+      <!-- СИНХРОНИЗАЦИЯ SUPABASE -->
+      <div class="glass-card" style="margin-top: 14px; padding: 14px; border: 1px solid var(--border);">
+        <div style="font-weight: 800; font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>☁️ облачная синхронизация</span>
+        </div>
+
+        <!-- форма входа / регистрации -->
+        <div id="auth-form">
+          <input type="email" id="auth-email" class="input" placeholder="ваш email" style="margin-bottom: 8px;">
+          <input type="password" id="auth-password" class="input" placeholder="пароль" style="margin-bottom: 8px;">
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-act btn-go" style="flex: 1; justify-content: center;" onclick="handleSignIn()">войти</button>
+            <button type="button" class="btn-act" style="flex: 1; justify-content: center;" onclick="handleSignUp()">регистрация</button>
+          </div>
+        </div>
+
+        <!-- состояние: пользователь залогинен -->
+        <div id="user-logged-in" style="display: none; text-align: center;">
+          <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">вы вошли как:</div>
+          <div id="user-email-display" style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 10px; word-break: break-all;"></div>
+          <button type="button" class="btn-act btn-danger" style="width: 100%; justify-content: center;" onclick="handleSignOut()">выйти из аккаунта</button>
+        </div>
       </div>
+
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
       <div style="text-align: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted);">
         <span style="color: var(--accent);">❖</span> • <span>v2.4.0</span>
@@ -1102,6 +1121,128 @@
   </div>
 
   <script>
+    // ---------- Supabase ----------
+    const SUPABASE_URL = 'https://lhdqptvqpvecoouxjnpw.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_4hDZ3w1hYmQ1RCWu1Ge5ug_Q_n7bivL';
+    const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    if (sbClient) {
+      console.log("Supabase успешно подключен!", sbClient);
+    } else {
+      console.error("Не удалось инициализировать Supabase: библиотека не загрузилась");
+    }
+
+    // ---------- Supabase Auth ----------
+    async function handleSignUp() {
+      if (!sbClient) return showToast('supabase не подключен', '!');
+      const email = $('auth-email').value.trim();
+      const password = $('auth-password').value.trim();
+      if (!email || !password) return showToast('введите email и пароль', '!');
+      const { data, error } = await sbClient.auth.signUp({ email, password });
+      if (error) {
+        showToast('ошибка регистрации: ' + error.message, '!');
+      } else {
+        showToast('регистрация успешна! пробуем войти...');
+        _cloudSyncToastShown = false;
+        checkUser();
+      }
+    }
+
+    async function handleSignIn() {
+      if (!sbClient) return showToast('supabase не подключен', '!');
+      const email = $('auth-email').value.trim();
+      const password = $('auth-password').value.trim();
+      if (!email || !password) return showToast('введите email и пароль', '!');
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        showToast('ошибка входа: ' + error.message, '!');
+      } else {
+        showToast('успешный вход в облако');
+        _cloudSyncToastShown = false;
+        checkUser();
+      }
+    }
+
+    async function handleSignOut() {
+      if (!sbClient) return;
+      await sbClient.auth.signOut();
+      _cloudSyncToastShown = false;
+      showToast('вы вышли из аккаунта');
+      checkUser();
+    }
+
+    async function checkUser() {
+      if (!sbClient) return;
+      const { data: { user } } = await sbClient.auth.getUser();
+      const formDiv = $('auth-form');
+      const userDiv = $('user-logged-in');
+      const emailSpan = $('user-email-display');
+      if (user) {
+        if (formDiv) formDiv.style.display = 'none';
+        if (userDiv) userDiv.style.display = 'block';
+        if (emailSpan) emailSpan.textContent = user.email;
+        console.log("Текущий пользователь ID:", user.id);
+        loadFromCloud(user.id);
+      } else {
+        if (formDiv) formDiv.style.display = 'block';
+        if (userDiv) userDiv.style.display = 'none';
+      }
+    }
+
+    // 2. Загрузка данных из облака
+    let _cloudSyncToastShown = false;
+    async function loadFromCloud(userId, showNotify = true) {
+      if (!sbClient || !userId) return;
+      try {
+        const { data, error } = await sbClient
+          .from('user_data')
+          .select('payload')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Ошибка загрузки из облака:', error.message);
+          return;
+        }
+
+        if (data && data.payload) {
+          const c = data.payload;
+
+          if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
+          if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
+          if (c.ep_sixday !== undefined) state.sixDay = c.ep_sixday === 'true';
+          if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
+          if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
+          if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
+          if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
+          if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
+
+          try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
+          try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
+          try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
+          try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
+
+          // Фиксируем скачанное в локальном localStorage
+          for (const k of Object.keys(c)) {
+            writeRaw(k, c[k]);
+          }
+
+          // Полный цикл обновления визуала
+          updateDaysConfig();
+          applyAppearance();
+          renderAll();
+          loadSchedDay();
+          fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+
+          if (showNotify && !_cloudSyncToastShown) {
+            _cloudSyncToastShown = true;
+            showToast('данные синхронизированы с облаком', '☁️');
+          }
+        }
+      } catch (err) {
+        console.error('Критическая ошибка разбора данных облака:', err);
+      }
+    }
+
     // ---------- Константы ----------
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, '0');
@@ -1435,7 +1576,8 @@
       }
     }
 
-    function save() {
+    let cloudSyncTimer = null;
+    function save(syncCloud = true) {
       const data = {
         ep_theme: state.theme,
         ep_liquid: String(state.liquid),
@@ -1450,12 +1592,45 @@
         ep_tasks: JSON.stringify(state.tasks),
         ep_archive: JSON.stringify(state.archive)
       };
+
       let ok = true;
-      for (const k of Object.keys(data)) if (!writeRaw(k, data[k])) ok = false;
+      for (const k of Object.keys(data)) {
+        if (!writeRaw(k, data[k])) ok = false;
+      }
       if (!ok && Date.now() - lastSaveWarn > 10000) {
         lastSaveWarn = Date.now();
-        showToast('не удалось сохранить данные: хранилище браузера недоступно или заполнено', '!');
+        showToast('не удалось сохранить данные в браузере', '!');
       }
+
+      if (syncCloud && sbClient) {
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = setTimeout(async () => {
+          try {
+            const { data: { user } } = await sbClient.auth.getUser();
+            if (!user) return;
+            const { data: existing } = await sbClient
+              .from('user_data')
+              .select('id')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (existing) {
+              await sbClient
+                .from('user_data')
+                .update({ payload: data, updated_at: new Date().toISOString() })
+                .eq('user_id', user.id);
+            } else {
+              await sbClient
+                .from('user_data')
+                .insert([{ user_id: user.id, payload: data }]);
+            }
+            console.log('Данные синхронизированы с облаком Supabase');
+          } catch (err) {
+            console.error('Ошибка облачной синхронизации:', err);
+          }
+        }, 350);
+      }
+
       return ok;
     }
 
@@ -2056,13 +2231,14 @@
               <button class="btn-act btn-danger" data-act="del" data-id="${id}" title="удалить" aria-label="удалить">удалить</button>
             </div>
           </div>`;
+        const nextComp = list[index + 1]?.comp || t.comp || 'medium';
         const breakCard = index < list.length - 1 && index % 2 === 0
           ? `<div class="break-card">
               <div style="min-width:0;">
                 <span class="badge" style="background:rgba(6,214,160,0.16);color:var(--success);font-weight:800;">перерыв и разминка</span>
-                <span style="font-size:12px;color:var(--muted);margin-left:6px;">глаза, шея и спина (3–5 мин)</span>
+                <span style="font-size:12px;color:var(--muted);margin-left:6px;">глаза, шея и спина (${COMP[nextComp].text})</span>
               </div>
-              <button class="btn-act btn-success" onclick="startStandaloneBreak('medium')">размяться</button>
+              <button class="btn-act btn-success" onclick="startStandaloneBreak('${nextComp}')">размяться</button>
             </div>`
           : '';
         return taskCard + breakCard;
@@ -2514,15 +2690,19 @@
       } catch (e) {}
     }
     // Вернулись на вкладку: сверяем отсчёт и заново берём блокировку экрана.
-    document.addEventListener('visibilitychange', () => {
+    document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState !== 'visible') return;
-      if (tState.running) { keepAwake(true); tick(); }
+      if (tState.running) { keepAwake(true); tick(); return; }
+      if (sbClient) {
+        const { data: { user } } = await sbClient.auth.getUser();
+        if (user) loadFromCloud(user.id, false);
+      }
     });
     // При закрытии страницы сохраняем накопленный фокус.
     window.addEventListener('pagehide', () => {
       if (resetting) return;
       syncTimer();
-      save();
+      save(false);
     });
 
     // ---------- Настройки ----------
@@ -2890,12 +3070,18 @@
     function timerIsActive() { return $('timerView').classList.contains('active'); }
 
     let resetting = false;
-    function resetAll() {
+    async function resetAll() {
       importBackup = null;
       setDisplay('btnUndoImport', false);
-      if (!confirm('сбросить все данные? задания, расписание и архив будут удалены')) return;
+      if (!confirm('сбросить все данные? задания, расписание и архив будут удалены (включая копию в облаке)')) return;
       resetting = true;
       try {
+        if (sbClient) {
+          const { data: { user } } = await sbClient.auth.getUser();
+          if (user) {
+            await sbClient.from('user_data').delete().eq('user_id', user.id);
+          }
+        }
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
@@ -3023,7 +3209,7 @@
       if (loadWarnings.length) {
         showToast('часть данных повреждена и сохранена отдельно (ключи ep_corrupt_*)', '!');
       }
-      setTimeout(() => showToast('данные хранятся в браузере — делайте копию кнопкой «экспорт»', 'i'), 1200);
+      checkUser();
     }
 
     document.addEventListener('DOMContentLoaded', init);
