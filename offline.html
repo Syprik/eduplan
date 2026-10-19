@@ -2,18 +2,27 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>eduplan — офлайн</title>
     <meta name="theme-color" content="#090b14">
+    
+    <!-- iOS PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="eduplan">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%238e61ff'/%3E%3Ctext%20x='50'%20y='68'%20font-size='60'%20text-anchor='middle'%20fill='%23fff'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="./manifest.json">
+
+    <!-- Иконка для экрана «Домой» на iOS (Safari требует растровый PNG, SVG не подходит) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+
     <style>
       :root {
         --bg: #090b14;
-        --card: rgba(22, 27, 46, 0.7);
+        --card: rgba(22, 27, 46, 0.75);
         --text: #f0f3fa;
         --muted: #95a1be;
         --accent: #8e61ff;
@@ -26,53 +35,87 @@
         place-items: center;
         background: var(--bg);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
       }
       .card {
-        width: min(90vw, 440px);
-        padding: 24px 20px;
-        border: 1px solid rgba(255,255,255,0.12);
+        width: min(92vw, 420px);
+        padding: 32px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
         background: var(--card);
-        border-radius: 18px;
-        box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 24px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
         text-align: center;
       }
-      h1 { margin: 0 0 10px; font-size: clamp(2rem, 5vw, 2.6rem); }
-      p { margin: 0; color: var(--muted); line-height: 1.5; }
-      .btn {
-        margin-top: 18px; display: inline-block; padding: 10px 16px; border-radius: 10px;
-        background: var(--accent); color: #fff; text-decoration: none; font-weight: 800;
+      .icon-box {
+        font-size: 48px;
+        margin-bottom: 12px;
+        color: var(--accent);
       }
-      .hint { margin-top: 12px; color: var(--muted); font-size: 13px; }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 14px;
+      }
+      .btn {
+        margin-top: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 13px 18px;
+        border-radius: 14px;
+        background: var(--accent);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 15px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(142, 97, 255, 0.35);
+      }
+      .btn:active { transform: scale(0.97); }
+      .hint {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
     </style>
   </head>
   <body>
     <main class="card">
+      <div class="icon-box">❖</div>
       <h1>Нет подключения</h1>
-      <p>Проверьте интернет-соединение и откройте приложение позже.</p>
-      <a id="openApp" class="btn" href="/">Открыть приложение</a>
-      <div class="hint">Если вы уже устанавливали приложение как PWA — откройте значок на рабочем столе.</div>
+      <p>Проверьте интернет-соединение. Как только сеть появится, вы сможете продолжить работу.</p>
+      
+      <button id="reloadBtn" class="btn" onclick="tryReload()">Обновить страницу</button>
+      
+      <div class="hint">Если интернет появился — нажмите кнопку выше, чтобы вернуться в планировщик.</div>
     </main>
 
     <script>
-      // Если устройство онлайн — предложим перейти в основное приложение.
-      function updateOnlineStatus() {
-        const btn = document.getElementById('openApp');
+      function tryReload() {
         if (navigator.onLine) {
-          btn.style.display = 'inline-block';
+          window.location.href = './index.html';
         } else {
-          btn.style.display = 'none';
+          location.reload();
         }
       }
-      window.addEventListener('online', updateOnlineStatus);
-      window.addEventListener('offline', updateOnlineStatus);
-      updateOnlineStatus();
 
-      // Для iOS: при запуске страницы в standalone-режиме скрываем кнопку (уже внутри PWA)
-      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-        const btn = document.getElementById('openApp');
-        if (btn) btn.style.display = 'none';
-      }
+      window.addEventListener('online', () => {
+        // Как только интернет вернулся — мгновенно возвращаемся в приложение
+        window.location.href = './index.html';
+      });
     </script>
   </body>
 </html>
