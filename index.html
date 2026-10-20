@@ -245,6 +245,103 @@
         inset 0 -1px 2px var(--glass-rim),
         0 10px 28px -6px rgba(0, 0, 0, 0.35);
       transition: box-shadow 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      cursor: default;
+    }
+    /* Dynamic Island — свёрнутый таймер */
+    .brand.island {
+      cursor: pointer;
+      min-height: 40px;
+      padding: 6px 16px;
+      background: linear-gradient(135deg, rgba(142,97,255,0.18) 0%, rgba(91,54,245,0.10) 100%);
+      border-color: var(--accent);
+    }
+    .brand.island.is-expanded {
+      min-height: 44px;
+      padding: 8px 18px;
+      box-shadow:
+        inset 0 1.5px 2px var(--glass-highlight),
+        inset 0 -1px 2px var(--glass-rim),
+        0 10px 28px -6px rgba(0, 0, 0, 0.35),
+        0 0 20px var(--glow);
+    }
+    .island-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .island-subj {
+      color: var(--accent);
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .island-time {
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .island-phase {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .island-actions {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    .brand.island.is-expanded .island-actions {
+      display: flex;
+    }
+    .island-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--ctrl-bg);
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 0;
+      flex-shrink: 0;
+      transition: background 0.18s, transform 0.18s;
+    }
+    .island-btn svg {
+      display: block;
+    }
+    .island-btn:hover { background: var(--ctrl-hover); transform: scale(1.08); }
+    .island-btn:active { transform: scale(0.92); }
+    .island-btn.primary {
+      background: var(--grad);
+      border-color: transparent;
+      color: #fff;
+    }
+    .brand-timer-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 0;
+      opacity: 0;
+      transform: scale(0.85);
+      overflow: hidden;
+      transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .brand.is-expanded .brand-timer-controls {
+      max-width: 120px;
+      opacity: 1;
+      transform: scale(1);
+      margin-left: 8px;
     }
     .brand-content {
       display: flex;
@@ -628,7 +725,8 @@
       justify-content: space-between; padding: 24px; z-index: 120;
     }
     .timer-view.active { display: flex; }
-    .timer-view:not(.mini) {
+    /* .timer-view:not(.mini) — отключено, таймер снова на весь экран */
+    /* .timer-view:not(.mini) {
       overflow-y: auto;
       align-items: center;
       justify-content: center;
@@ -637,15 +735,7 @@
     .timer-view:not(.mini) > .timer-mini-hide {
       width: 100%;
       max-width: 460px;
-    }
-    #timerExercises {
-      margin-top: 8px !important;
-      padding: 12px 14px !important;
-      border-radius: 16px;
-      text-align: left;
-      max-height: none !important;
-      overflow: visible !important;
-    }
+    } */
     #timerMainBtns { display: flex; gap: 8px; }
     #timerMainBtns > button { flex: 1 1 0; min-width: 0; }
 
@@ -729,6 +819,20 @@
         <span id="toastIcon" hidden></span>
         <span id="toastMsg"></span>
         <button id="toastUndo" class="toast-undo" type="button" onclick="undoLastAction()" hidden>отменить</button>
+      </span>
+      <!-- Dynamic Island: свёрнутый таймер -->
+      <span class="brand-content brand-timer" id="brandTimer" style="display:none; cursor:pointer;" onclick="toggleIslandExpand(event)">
+        <span id="islandSubj" style="font-weight:800; font-size:13px; color:var(--accent);">Алгебра</span>
+        <span style="opacity:0.5; margin:0 4px;">•</span>
+        <span id="islandDigits" style="font-weight:800; font-size:13px; font-variant-numeric:tabular-nums;">25:00</span>
+        <span class="brand-timer-controls" id="islandControls">
+          <button type="button" class="island-btn" id="islandToggleBtn" onclick="event.stopPropagation(); toggleTimer();" title="пауза/старт">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4" height="16" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/></svg>
+          </button>
+          <button type="button" class="island-btn" onclick="event.stopPropagation(); expandTimer();" title="во весь экран">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+          </button>
+        </span>
       </span>
     </div>
   </header>
@@ -864,11 +968,12 @@
           </div>
           <div class="form-group">
             <span class="label" id="addCompLabel">сложность:</span>
-            <div class="seg" id="addComp" role="group" aria-labelledby="addCompLabel">
-              <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">~15 мин</button>
-              <button type="button" class="seg-btn active" data-v="medium" aria-pressed="true">~30 мин</button>
-              <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">~45 мин</button>
-            </div>
+              <div class="seg" id="addComp" role="group" aria-labelledby="addCompLabel">
+                <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
+                <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
+                <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
+                <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">≈45 мин</button>
+              </div>
           </div>
           <button type="submit" class="btn-main" style="margin-top: 8px;">добавить в план</button>
         </form>
@@ -884,14 +989,9 @@
         </div>
       </div>
       <div class="chips" id="filterChips">
-        <button class="chip chip-action" onclick="autoPrioritize()" title="расставить приоритеты по срочности и сложности">по срочности</button>
+        <button class="chip chip-action" onclick="autoPrioritize()" title="расставить приоритеты по срочности и сложности">⚡ по срочности</button>
         <button class="chip active" data-f="all" onclick="setFilter('all', this)" aria-pressed="true">все задачи</button>
-        <button class="chip" data-f="urgent" onclick="setFilter('urgent', this)" aria-pressed="false">срочные</button>
-        <button class="chip" data-f="overdue" onclick="setFilter('overdue', this)" aria-pressed="false">просроченные</button>
-        <button class="chip" data-f="today" onclick="setFilter('today', this)" aria-pressed="false">на сегодня</button>
-        <button class="chip" data-f="no_due" onclick="setFilter('no_due', this)" aria-pressed="false">без срока</button>
         <button class="chip" data-f="smart" onclick="setFilter('smart', this)" aria-pressed="false">умная</button>
-        <button class="chip" data-f="by_date" onclick="setFilter('by_date', this)" aria-pressed="false">по сроку</button>
       </div>
       <div id="tasksList"></div>
     </section>
@@ -958,16 +1058,6 @@
           <option value="archive">архив заданий</option>
         </select>
       </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <div class="form-group">
-          <label class="label" for="setWork">работа (мин):</label>
-          <input type="number" id="setWork" class="input" min="1" max="180" value="25" onchange="saveTimerSettings()">
-        </div>
-        <div class="form-group">
-          <label class="label" for="setBreak">отдых (мин):</label>
-          <input type="number" id="setBreak" class="input" min="1" max="60" value="5" onchange="saveTimerSettings()">
-        </div>
-      </div>
       <div style="display: flex; gap: 8px; margin-top: 8px;">
         <button class="btn-act" style="flex:1;" onclick="exportJSON()">экспорт</button>
         <button class="btn-act" style="flex:1;" onclick="$('importFile').click()">импорт</button>
@@ -987,8 +1077,8 @@
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-act btn-go" style="flex: 1; justify-content: center;" onclick="handleSignIn()">войти</button>
             <button type="button" class="btn-act" style="flex: 1; justify-content: center;" onclick="handleSignUp()">регистрация</button>
-          </div>
-        </div>
+    </div>
+  </div>
 
         <!-- состояние: пользователь залогинен -->
         <div id="user-logged-in" style="display: none; text-align: center;">
@@ -1000,7 +1090,7 @@
 
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
       <div style="text-align: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted);">
-        <span style="color: var(--accent);">❖</span> • <span>v2.5.5</span>
+        <span style="color: var(--accent);">❖</span> • <span>v2.7.1</span>
       </div>
     </div>
   </div>
@@ -1050,9 +1140,10 @@
         <div class="form-group">
           <span class="label" id="editCompLabel">сложность:</span>
           <div class="seg" id="editComp" role="group" aria-labelledby="editCompLabel">
-            <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">~15 мин</button>
-            <button type="button" class="seg-btn active" data-v="medium" aria-pressed="true">~30 мин</button>
-            <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">~45 мин</button>
+            <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
+            <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
+            <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
+            <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">≈45 мин</button>
           </div>
         </div>
         <button type="submit" class="btn-main">сохранить изменения</button>
@@ -1095,9 +1186,36 @@
           <span class="badge" style="background: rgba(142,97,255,0.2); color: var(--accent); margin-top: 4px;" id="timerPhase">фаза работы</span>
         </div>
       </div>
-      <div id="timerExercises" class="glass-card" style="display:none;">
-        <div style="font-size:11px;font-weight:800;color:var(--success);margin-bottom:4px;text-transform:uppercase;">физкультминутка:</div>
-        <div id="exerciseList" style="font-size:12px;display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="smartBreakCard" class="glass-card" style="display:none; margin: 12px auto 0; max-width: 420px; width: 100%; text-align: left; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 800; color: var(--success); text-transform: uppercase; letter-spacing: 0.5px;">умная разминка</span>
+            <span class="badge" id="breakStepBadge" style="background: rgba(6,214,160,0.15); color: var(--success); font-size: 10px;">шаг 1 из 3</span>
+          </div>
+          <button type="button" class="btn-act" id="btnToggleChill" onclick="toggleChillMode()" style="font-size: 11px; padding: 4px 8px;">просто отдых</button>
+        </div>
+
+        <div id="breakActiveStep" style="display: flex; align-items: center; gap: 12px; margin: 10px 0;">
+          <span id="stepIcon" style="font-size: 28px; flex-shrink: 0;">👁</span>
+          <div style="flex: 1; min-width: 0;">
+            <div id="stepTitle" style="font-weight: 800; font-size: 14px; color: var(--text);">правило 20-20-20</div>
+            <div id="stepDesc" style="font-size: 11.5px; color: var(--muted); line-height: 1.35; margin-top: 2px;">посмотри в окно на самый дальний объект</div>
+          </div>
+          <div id="stepTimer" style="font-variant-numeric: tabular-nums; font-weight: 800; font-size: 16px; color: var(--success); flex-shrink: 0;">0:25</div>
+        </div>
+
+        <div class="prog-bg" style="height: 4px; margin-top: 8px;">
+          <div class="prog-fill" id="breakStepProg" style="background: var(--success); box-shadow: 0 0 10px rgba(6,214,160,0.4); width: 0%;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+          <button type="button" class="btn-act" onclick="nextBreakStep(true)" style="font-size: 11px; color: var(--muted);">пропустить шаг ➔</button>
+        </div>
+      </div>
+
+      <div id="chillBreakNotice" class="glass-card" style="display:none; margin: 12px auto 0; max-width: 420px; width: 100%; text-align: center; padding: 12px;">
+        <span style="font-size: 12px; color: var(--muted);">режим свободного отдыха без упражнений</span>
+        <button type="button" class="btn-act" onclick="toggleChillMode()" style="font-size: 11px; margin-left: 8px;">включить разминку</button>
       </div>
     </div>
     <div class="timer-mini-hide" style="flex-direction: column; gap: 8px; width: 100%;">
@@ -1106,7 +1224,6 @@
         <button class="btn-main btn-success" id="timerFinishBtn" onclick="finishTask()">завершить задачу</button>
       </div>
       <button class="btn-act" id="btnSkipBreak" onclick="skipBreak()" style="width: 100%; padding: 12px; display: none;">закончить отдых</button>
-      <button class="btn-act" id="timerAbortBtn" style="width: 100%; padding: 12px;" onclick="abortTimer()">прервать сессию</button>
     </div>
 
     <div class="modal-overlay" id="timerPhaseModal" style="background: rgba(0,0,0,0.8);">
@@ -1277,30 +1394,48 @@
     const VALID_THEMES = ['dark', 'light', 'purple', 'emerald', 'sunset'];
     const VALID_TABS = ['overview', 'schedule', 'add', 'tasks', 'archive'];
     const VALID_PRIO = ['critical', 'urgent', 'important', 'normal', 'later'];
-    const VALID_COMP = ['easy', 'medium', 'hard'];
+    const VALID_COMP = ['easy', 'normal_comp', 'medium', 'hard'];
     const VALID_PERIODS = ['day', 'week', 'month', 'year', 'all'];
     const DAYS = { 1: 'понедельник', 2: 'вторник', 3: 'среда', 4: 'четверг', 5: 'пятница', 6: 'суббота' };
     const SHORT_DAYS = { 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт', 6: 'сб' };
-    const EXERCISES_DB = {
-      easy: [
-        { title: 'отдых для глаз', time: '20 сек', desc: 'посмотри в окно или на дальний предмет, часто моргай' },
-        { title: 'круги плечами', time: '30 сек', desc: '8-10 плавных круговых движений плечами назад и вперед' },
-        { title: 'потягивание вверх', time: '30 сек', desc: 'подними руки над головой и мягко вытяни позвоночник' }
-      ],
-      medium: [
-        { title: 'повороты головы', time: '40 сек', desc: 'медленно поверни голову вправо, затем влево без резких движений' },
-        { title: 'раскрытие груди', time: '40 сек', desc: 'отведи плечи назад, сведи лопатки на 5 секунд и расслабься' },
-        { title: 'боковые наклоны', time: '40 сек', desc: 'плавные наклоны корпуса в стороны с поднятой рукой' },
-        { title: 'прогулка по комнате', time: '60 сек', desc: 'встань, походи по комнате и разомни ноги' }
-      ],
-      hard: [
-        { title: 'выпрямление спины', time: '45 сек', desc: 'руки на пояс, расправь плечи и мягко потянись грудью вперед' },
-        { title: 'растяжка ног', time: '60 сек', desc: 'поставь ногу на пятку перед собой и мягко наклонись к ней' },
-        { title: 'спокойные приседания', time: '45 сек', desc: '6-10 аккуратных приседаний в комфортном темпе или ходьба на месте' },
-        { title: 'разминка плеч и кистей', time: '45 сек', desc: 'круги плечами и встряхивание расслабленных кистей' },
-        { title: 'отдых для глаз и шаги', time: '2 мин', desc: 'пройдись и посмотри вдаль за окно' }
-      ]
-    };
+    const EXERCISE_STEPS = {
+  wrists: [
+    { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: 25, icon: '🤲' },
+    { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя другой рукой', dur: 25, icon: '✋' }
+  ],
+  eyes: [
+    { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: 25, icon: '👁' },
+    { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: 20, icon: '👀' }
+  ],
+  neck: [
+    { title: 'мягкие наклоны шеи', desc: 'опусти ухо к правому плечу на 10 сек, затем плавно к левому', dur: 30, icon: '💆' },
+    { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: 30, icon: '✨' }
+  ],
+  body: [
+    { title: 'встань со стула', desc: 'поднимись во весь рост, потянись руками к потолку', dur: 30, icon: '🧍' },
+    { title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, медленный выдох 6 сек', dur: 35, icon: '🫁' }
+  ]
+};
+
+function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
+  const s = String(subjName).toLowerCase();
+  const isWriting = /(алгебр|геометр|русск|физик|химия|матем|конспект|сочинен|черчен)/i.test(s);
+  const isReading = /(истор|литер|биолог|географ|информ|чтени|англ|обществ)/i.test(s);
+  
+  let steps = [];
+  if (isWriting) {
+    steps.push(EXERCISE_STEPS.wrists[0], EXERCISE_STEPS.neck[1], EXERCISE_STEPS.wrists[1]);
+  } else if (isReading) {
+    steps.push(EXERCISE_STEPS.eyes[0], EXERCISE_STEPS.body[0], EXERCISE_STEPS.eyes[1]);
+  } else {
+    steps.push(EXERCISE_STEPS.eyes[0], EXERCISE_STEPS.neck[0], EXERCISE_STEPS.neck[1]);
+  }
+
+  if (cycle >= 2 || comp === 'hard') {
+    steps.push(EXERCISE_STEPS.body[1]);
+  }
+  return steps;
+}
     const PRIO = {
       // critical ставится только кнопкой автосортировки: вручную его выбрать нельзя.
       critical: { text: 'очень срочно', c: 'prio-critical', b: 'badge-danger' },
@@ -1310,9 +1445,10 @@
       later: { text: 'позже', c: 'prio-later', b: 'badge-info' }
     };
     const COMP = {
-      easy:   { text: '~15 мин', t: 15, hint: 'устный предмет, повторение, чтение параграфа' },
-      medium: { text: '~30 мин', t: 30, hint: 'обычное письменное задание, упражнения' },
-      hard:   { text: '~45 мин', t: 45, hint: 'проект, сочинение, подготовка к контрольной' }
+      easy:        { text: 'примерно 15 мин', t: 15, hint: 'устный предмет, быстрое повторение' },
+      normal_comp: { text: 'примерно 25 мин', t: 25, hint: 'небольшое письменное задание' },
+      medium:      { text: 'примерно 35 мин', t: 35, hint: 'объёмное домашнее задание, упражнения' },
+      hard:        { text: 'примерно 45 мин', t: 45, hint: 'проект, сочинение, подготовка к контрольной' }
     };
     const PERIOD_LABEL = { day: 'за сегодня', week: 'за эту неделю', month: 'за этот месяц', year: 'за этот год', all: 'за всё время' };
     const CIRC = 2 * Math.PI * 96;
@@ -2167,7 +2303,8 @@
       $('addText').value = '';
       $('addSubjOther').value = '';
       setSegValue('addPrio', 'important');
-      setSegValue('addComp', 'medium');
+      setSegValue('addComp', 'normal_comp');
+      renderAll();
       showToast('задание добавлено в план');
       tab('tasks', navBtn('tasks'));
     }
@@ -2409,6 +2546,11 @@
     let lastSaveAt = 0;
     let wakeLock = null;
     let tState = { id: null, phase: 'work', cycle: 1, taskComp: 'medium', totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
+    let breakPlan = [];
+    let breakStepIdx = 0;
+    let breakStepLeftMs = 0;
+    let breakStepTotalMs = 0;
+    let breakChillMode = false;
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
 
@@ -2434,6 +2576,7 @@
       tState.lastTs = now;
       tState.running = true;
       timerInt = setInterval(tick, 500);
+      if (phase === 'break') initBreakRoutine();
       updatePhaseUI();
       updateTimerUI();
       setTimerBtn(true);
@@ -2445,6 +2588,15 @@
       if (!tState.running) return;
       syncTimer();
       if (tState.leftMs <= 0) { onPhaseEnd(); return; }
+      if (tState.phase === 'break' && !breakChillMode && tState.running) {
+        breakStepLeftMs -= 500;
+        if (breakStepLeftMs <= 0) {
+          beep(620, 0.15);
+          nextBreakStep(false);
+        } else {
+          updateBreakUI();
+        }
+      }
       updateTimerUI();
       if (Date.now() - lastSaveAt > 15000) { lastSaveAt = Date.now(); save(); }
     }
@@ -2453,11 +2605,17 @@
       stopInterval();
       tState.running = false;
       tState.leftMs = 0;
+      breakPlan = [];
+      breakStepIdx = 0;
+      breakStepLeftMs = 0;
+      breakStepTotalMs = 0;
+      breakChillMode = false;
       updateTimerUI();
       setTimerBtn(false);
       save();
       chime();
       if ($('timerView').classList.contains('mini')) expandTimer();
+      if (tState.minimized) expandTimer();
       if (tState.phase === 'work') {
         showPhaseModal('время работы истекло!', 'отличная работа! перейдём к отдыху или задача готова?', 'work');
       } else if (!tState.id) {
@@ -2487,20 +2645,8 @@
       $('timerPhase').style.color = isBreak ? 'var(--success)' : 'var(--accent)';
       $('timerBar').style.stroke = isBreak ? 'var(--success)' : 'var(--accent)';
       setDisplay('btnSkipBreak', isBreak);
-      setDisplay('timerExercises', isBreak);
       setDisplay('timerFinishBtn', !isBreak || Boolean(tState.id));
-      setDisplay('timerAbortBtn', Boolean(tState.id));
-      if (isBreak) {
-        const exercises = EXERCISES_DB[tState.taskComp] || EXERCISES_DB.medium;
-        $('exerciseList').innerHTML = exercises.map((exercise, index) => `
-          <div class="exercise-item">
-            <div>
-              <div style="font-weight:700;font-size:13px;color:var(--text);">${index + 1}. ${esc(exercise.title)}</div>
-              <div class="exercise-desc">${esc(exercise.desc)}</div>
-            </div>
-            <span class="exercise-time-badge">${esc(exercise.time)}</span>
-          </div>`).join('');
-      }
+      updateBreakUI();
     }
 
     function updateTimerUI() {
@@ -2521,6 +2667,13 @@
         m.textContent = running ? 'II' : '>';
         m.setAttribute('aria-label', running ? 'пауза' : 'продолжить');
       }
+      // Иконка кнопки в островке.
+      const islandToggle = $('islandToggleBtn');
+      if (islandToggle) {
+        islandToggle.innerHTML = running
+          ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="4" height="16" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/></svg>'
+          : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="margin-left:1.5px;"><polygon points="6,4 20,12 6,20"/></svg>';
+      }
     }
 
     function toggleTimer() {
@@ -2532,7 +2685,7 @@
         save();
         setTimerBtn(false);
         keepAwake(false);
-      } else if (tState.leftMs > 0 && $('timerView').classList.contains('active')) {
+      } else if (tState.leftMs > 0 && (timerIsActive() || Boolean(tState.minimized))) {
         tState.running = true;
         tState.lastTs = Date.now();
         tState.endAt = tState.lastTs + tState.leftMs;
@@ -2543,22 +2696,76 @@
       }
     }
 
-    // ---------- Свёрнутый режим ----------
+    // ---------- Свёрнутый режим (Dynamic Island) ----------
     function collapseTimer() {
       const v = $('timerView');
       if (!v.classList.contains('active')) return;
-      v.classList.add('mini');
-      applyMiniPos();
-      updateMiniUI();
+      v.classList.remove('mini');
+      v.classList.remove('active');
+      v.style.transform = '';
+      miniPos = null;
+      tState.minimized = true;
+      hidePhaseModal();
+      keepAwake(false);
+      showIsland();
+      setTimerBtn(tState.running);
+      updateIslandUI();
     }
 
     function expandTimer() {
-      $('timerView').classList.remove('mini');
-      $('timerView').style.transform = '';
-      updateMiniUI();
+      tState.minimized = false;
+      hideIsland();
+      const v = $('timerView');
+      v.classList.add('active');
+      updateTimerUI();
       const b = $('timerToggleBtn');
       if (b) b.focus();
     }
+
+    function showIsland() {
+      $('brandDefault').style.display = 'none';
+      $('brandNotice').style.display = 'none';
+      $('brandTimer').style.display = 'flex';
+      $('toast').classList.add('island');
+      $('toast').classList.remove('is-expanded');
+    }
+
+    function hideIsland() {
+      $('brandTimer').style.display = 'none';
+      $('toast').classList.remove('island');
+      $('toast').classList.remove('is-expanded');
+      $('brandDefault').style.display = '';
+      $('brandNotice').style.display = '';
+      $('toast').style.borderColor = '';
+    }
+
+    function updateIslandUI() {
+      if (!tState.minimized) return;
+      const sec = Math.max(0, Math.ceil(tState.leftMs / 1000));
+      const txt = `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+      const subj = $('islandSubj');
+      const digits = $('islandDigits');
+      const isBreak = tState.phase === 'break';
+      if (subj) {
+        const task = tState.id ? state.tasks.find(x => x.id === tState.id) : null;
+        subj.textContent = task ? task.subj : (isBreak ? 'перерыв' : 'задание');
+        subj.style.color = isBreak ? 'var(--success)' : 'var(--accent)';
+      }
+      if (digits) digits.textContent = txt;
+      $('toast').style.borderColor = isBreak ? 'var(--success)' : 'var(--accent)';
+    }
+
+    function toggleIslandExpand(e) {
+      if (e.target.closest('.island-btn')) return;
+      $('toast').classList.toggle('is-expanded');
+    }
+
+    // Обновление острова при тике таймера
+    const _islandTick = () => {
+      if (tState.minimized && tState.leftMs > 0) updateIslandUI();
+      setTimeout(_islandTick, 1000);
+    };
+    setTimeout(_islandTick, 1000);
 
     function updateMiniUI() {
       const sec = Math.max(0, Math.ceil(tState.leftMs / 1000));
@@ -2612,9 +2819,14 @@
     }
 
     function openTimer(id) {
-      if ($('timerView').classList.contains('active')) { showToast('сессия уже идёт', 'i'); return; }
+      if (timerIsActive()) { showToast('сессия уже идёт', 'i'); return; }
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
+      breakPlan = [];
+      breakStepIdx = 0;
+      breakStepLeftMs = 0;
+      breakStepTotalMs = 0;
+      breakChillMode = false;
       tState = { id, phase: 'work', cycle: 1, taskComp: t.comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
       $('timerSubj').textContent = t.subj;
       $('timerTitle').textContent = t.text;
@@ -2623,34 +2835,47 @@
       // поэтому будим звук прямо в обработчике клика.
       primeAudio();
       $('timerView').classList.add('active');
-      startPhase('work', state.work * 60);
+      const workMins = COMP[t.comp]?.t || state.work;
+      startPhase('work', workMins * 60);
       $('timerToggleBtn').focus();
+    }
+
+    function getBreakDurationMinutes(comp = 'normal_comp') {
+      if (comp === 'easy') return 3;
+      if (comp === 'hard') return 7;
+      return 5;
     }
 
     function startBreak() {
       hidePhaseModal();
-      startPhase('break', state.rest * 60);
+      const breakMins = getBreakDurationMinutes(tState.taskComp);
+      startPhase('break', breakMins * 60);
     }
-    function startStandaloneBreak(comp = 'medium') {
+    function startStandaloneBreak(comp = 'normal_comp') {
       if (timerIsActive()) { showToast('сначала завершите текущую фокус-сессию', 'i'); return; }
-      const taskComp = EXERCISES_DB[comp] ? comp : 'medium';
-      const duration = taskComp === 'hard' ? 7 : taskComp === 'medium' ? 5 : 2;
-      tState = { id: null, phase: 'break', cycle: 1, taskComp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
+      breakPlan = [];
+      breakChillMode = true;
+      tState = { id: null, phase: 'break', cycle: 1, taskComp: comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
       $('timerSubj').textContent = 'перерыв';
       $('timerTitle').textContent = 'разминка';
       hidePhaseModal();
       primeAudio();
       $('timerView').classList.add('active');
-      startPhase('break', duration * 60);
+      startPhase('break', getBreakDurationMinutes(comp) * 60);
       $('timerToggleBtn').focus();
     }
     function startWorkAgain() {
       hidePhaseModal();
+      breakPlan = [];
+      breakChillMode = false;
       tState.cycle += 1;
-      startPhase('work', state.work * 60);
+      const workMins = COMP[tState.taskComp]?.t || state.work;
+      startPhase('work', workMins * 60);
     }
     function add5Min() {
       hidePhaseModal();
+      breakPlan = [];
+      breakChillMode = false;
       startPhase('work', 5 * 60);
     }
     function skipBreak() {
@@ -2659,6 +2884,11 @@
       stopInterval();
       tState.running = false;
       tState.leftMs = 0;
+      breakPlan = [];
+      breakStepIdx = 0;
+      breakStepLeftMs = 0;
+      breakStepTotalMs = 0;
+      breakChillMode = false;
       updateTimerUI();
       setTimerBtn(false);
       save();
@@ -2676,7 +2906,13 @@
       syncTimer();
       stopInterval();
       tState.running = false;
+      tState.minimized = false;
       tState.id = null;
+      breakPlan = [];
+      breakStepIdx = 0;
+      breakStepLeftMs = 0;
+      breakStepTotalMs = 0;
+      breakChillMode = false;
       save();
       const v = $('timerView');
       v.classList.remove('active');
@@ -2685,10 +2921,11 @@
       miniPos = null;
       hidePhaseModal();
       keepAwake(false);
+      hideIsland();
     }
 
     function abortTimer() {
-      if (!$('timerView').classList.contains('active')) return;
+      if (!timerIsActive()) return;
       if (tState.running && !confirm('прервать фокус-сессию? задача останется в плане')) return;
       closeTimerView();
       showToast('таймер остановлен, задача осталась в плане', 'i');
@@ -2696,7 +2933,7 @@
     }
 
     function finishTask() {
-      if (!$('timerView').classList.contains('active')) return;
+      if (!timerIsActive()) return;
       const id = tState.id;
       closeTimerView();
       if (id) completeTaskById(id);
@@ -2715,6 +2952,64 @@
         }
       } catch (e) {}
     }
+
+    // ---------- Умная разминка ----------
+    function initBreakRoutine() {
+      breakChillMode = false;
+      breakStepIdx = 0;
+      const task = tState.id ? state.tasks.find(x => x.id === tState.id) : null;
+      const subj = task ? task.subj : '';
+      breakPlan = generateSmartRoutine(subj, tState.cycle, tState.taskComp);
+      loadBreakStep(0);
+    }
+
+    function loadBreakStep(idx) {
+      if (!breakPlan.length || idx >= breakPlan.length) {
+        breakChillMode = true;
+        updateBreakUI();
+        return;
+      }
+      breakStepIdx = idx;
+      const cur = breakPlan[idx];
+      breakStepTotalMs = cur.dur * 1000;
+      breakStepLeftMs = breakStepTotalMs;
+      updateBreakUI();
+    }
+
+    function nextBreakStep(manual = false) {
+      if (manual) beep(440, 0.1);
+      if (breakStepIdx + 1 < breakPlan.length) {
+        loadBreakStep(breakStepIdx + 1);
+      } else {
+        breakChillMode = true;
+        updateBreakUI();
+      }
+    }
+
+    function toggleChillMode() {
+      breakChillMode = !breakChillMode;
+      if (!breakChillMode && !breakPlan.length) initBreakRoutine();
+      updateBreakUI();
+    }
+
+    function updateBreakUI() {
+      const isBreak = tState.phase === 'break';
+      setDisplay('smartBreakCard', isBreak && !breakChillMode);
+      setDisplay('chillBreakNotice', isBreak && breakChillMode);
+      if (!isBreak || breakChillMode) return;
+
+      const cur = breakPlan[breakStepIdx];
+      if (!cur) return;
+      $('breakStepBadge').textContent = `шаг ${breakStepIdx + 1} из ${breakPlan.length}`;
+      $('stepIcon').textContent = cur.icon;
+      $('stepTitle').textContent = cur.title;
+      $('stepDesc').textContent = cur.desc;
+      const s = Math.ceil(breakStepLeftMs / 1000);
+      $('stepTimer').textContent = `0:${pad(s)}`;
+      const pct = breakStepTotalMs ? Math.round(((breakStepTotalMs - breakStepLeftMs) / breakStepTotalMs) * 100) : 0;
+      $('breakStepProg').style.width = `${pct}%`;
+    }
+
     // Вернулись на вкладку: сверяем отсчёт и заново берём блокировку экрана.
     document.addEventListener('visibilitychange', async () => {
       if (document.visibilityState !== 'visible') return;
@@ -2737,8 +3032,6 @@
       $('setLiquid').checked = state.liquid;
       $('setSixDay').checked = state.sixDay;
       $('setStart').value = state.start;
-      $('setWork').value = state.work;
-      $('setBreak').value = state.rest;
       setDisplay('btnUndoImport', !!importBackup);
     }
     function openSettings() {
@@ -2766,12 +3059,7 @@
       showToast('стартовая страница сохранена');
     }
     function saveTimerSettings() {
-      state.work = clamp(toInt($('setWork').value, 25), 1, 180);
-      state.rest = clamp(toInt($('setBreak').value, 5), 1, 60);
-      $('setWork').value = state.work;
-      $('setBreak').value = state.rest;
-      save();
-      showToast('настройки таймера сохранены');
+      // Удалено: время отдыха теперь рассчитывается автоматически
     }
 
     function exportJSON() {
@@ -3093,7 +3381,7 @@
       showToast('импорт отменён');
     }
 
-    function timerIsActive() { return $('timerView').classList.contains('active'); }
+    function timerIsActive() { return $('timerView').classList.contains('active') || Boolean(tState.minimized); }
 
     let resetting = false;
     async function resetAll() {
@@ -3236,9 +3524,62 @@
         showToast('часть данных повреждена и сохранена отдельно (ключи ep_corrupt_*)', '!');
       }
       checkUser();
+
+      // Окно приветствия — показываем строго один раз
+      if (!localStorage.getItem('ep_onboarded')) {
+        const m = $('welcomeModal');
+        if (m) m.classList.add('active');
+      }
+    }
+
+    function closeWelcomeModal() {
+      localStorage.setItem('ep_onboarded', '1');
+      const m = $('welcomeModal');
+      if (m) m.classList.remove('active');
     }
 
     document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <!-- ОКНО ПРИВЕТСТВИЯ -->
+  <div class="modal-overlay" id="welcomeModal" style="z-index: 200; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);">
+    <div class="glass modal-box" style="background: var(--card-solid, #161b2e); border: 1px solid var(--border); max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 24px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px; color: var(--accent);">❖</span>
+          <span style="font-weight: 800; font-size: 17px; color: var(--text);">Добро пожаловать в eduplan</span>
+        </div>
+        <button class="icon-btn" onclick="closeWelcomeModal()" aria-label="закрыть" style="width: 32px; height: 32px; font-size: 16px;">✕</button>
+      </div>
+
+      <div style="font-size: 13px; line-height: 1.6; color: var(--text); display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <b style="color: var(--accent);">Школьный график</b> — заполняйте уроки вручную по дням недели или импортируйте расписание из файла .xls / .xlsx одним нажатием.
+        </div>
+        <div>
+          <b style="color: var(--accent);">Новое задание</b> — добавляйте домашние задания с выбором предмета из расписания, указывайте срок сдачи, срочность и расчётное время выполнения (от 15 до 45 минут).
+        </div>
+        <div>
+          <b style="color: var(--accent);">План работы и умная сортировка</b> — расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте задачи по категориям и выполняйте встроенные физкультминутки между заданиями.
+        </div>
+        <div>
+          <b style="color: var(--accent);">Фокус-таймер и островок</b> — запускайте таймер под время конкретной задачи; сверните таймер в верхнюю капсулу eduplan, чтобы пользоваться планировщиком без потери отсчёта.
+        </div>
+        <div>
+          <b style="color: var(--accent);">Настройки (кнопка ≡ справа внизу)</b> — выбирайте тему оформления Liquid Glass, включайте шестидневную неделю, синхронизируйте данные между устройствами через облако Supabase.
+        </div>
+      </div>
+
+      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 20px;">Начать работу</button>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>
