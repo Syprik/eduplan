@@ -1094,7 +1094,7 @@
 
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
       <div style="text-align: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted);">
-        <span style="color: var(--accent);">❖</span> • <span>v2.9.2</span>
+        <span style="color: var(--accent);">❖</span> • <span>v3.0.0</span>pre-release
       </div>
     </div>
   </div>
@@ -1381,6 +1381,9 @@
           renderAll();
           loadSchedDay();
           fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+          if (typeof renderAll === 'function') renderAll();
+          if (typeof applyAppearance === 'function') applyAppearance();
+          if (typeof loadSchedDay === 'function') loadSchedDay();
 
           if (showNotify && !_cloudSyncToastShown) {
             _cloudSyncToastShown = true;
@@ -2029,11 +2032,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       // Применение к интерфейсу
       const changes = [];
+      if (detectedDay && isDayEnabled(detectedDay) && !$('addDay').dataset.userLocked) {
+        $('addDay').value = detectedDay;
+      }
       if (detectedSubj && !$('addSubj').dataset.userLocked) {
-        const targetDay = (detectedDay && isDayEnabled(detectedDay)) ? detectedDay : ($('addDay').value || '1');
-        if (!isDayEnabled($('addDay').value)) $('addDay').value = targetDay;
+        if (!isDayEnabled($('addDay').value)) $('addDay').value = '1';
         fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, detectedSubj);
         changes.push(`предмет: ${detectedSubj}`);
+      } else if (detectedDay && isDayEnabled(detectedDay) && !$('addSubj').dataset.userLocked) {
+        fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
       }
 
       if (detectedDue && !$('addDue').dataset.userLocked) {
@@ -2526,6 +2533,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       delete $('addDue').dataset.userLocked;
       delete $('addComp').dataset.userLocked;
       delete $('addPrio').dataset.userLocked;
+      setDisplay('smartParseHint', false);
       const due = $('addDue');
       due.min = getLocalToday();
       if (!due.value || !isValidDate(due.value) || due.value < getLocalToday()) due.value = tomorrowStr();
@@ -2549,6 +2557,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.tasks.push(task);
       save();
       $('addText').value = '';
+      setDisplay('smartParseHint', false);
       $('addSubjOther').value = '';
       setSegValue('addPrio', 'important');
       setSegValue('addComp', 'normal_comp');
@@ -3122,6 +3131,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       breakStepTotalMs = 0;
       breakChillMode = false;
       timerDigitsHidden = false;
+      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = '👁 скрыть';
       tState = { 
         id, 
         subj: t.subj || '', 
@@ -3217,6 +3227,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.minimized = false;
       tState.id = null;
       timerDigitsHidden = false;
+      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = '👁 скрыть';
       save();
       const v = $('timerView');
       v.classList.remove('active');
