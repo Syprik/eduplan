@@ -4,6 +4,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
   <link rel="apple-touch-icon-precomposed" href="./apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="eduplan">
   <meta charset="UTF-8">
@@ -952,6 +953,7 @@
           <div class="form-group">
             <label class="label" for="addText">содержание задания:</label>
             <textarea id="addText" class="input" rows="3" maxlength="500" placeholder="параграф, номера упражнений..." required></textarea>
+            <div id="smartParseHint" style="font-size: 11.5px; color: var(--accent); margin-top: 4px; display: none; transition: opacity 0.2s;"></div>
           </div>
           <div class="form-group">
             <label class="label" for="addDue">срок сдачи:</label>
@@ -969,6 +971,7 @@
           <div class="form-group">
             <span class="label" id="addCompLabel">сложность:</span>
               <div class="seg" id="addComp" role="group" aria-labelledby="addCompLabel">
+                <button type="button" class="seg-btn" data-v="test" aria-pressed="false">1 мин</button>
                 <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
                 <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
                 <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
@@ -1051,6 +1054,7 @@
       <div class="form-group">
         <label class="label" for="setStart">стартовая страница:</label>
         <select id="setStart" class="input" onchange="changeStartPage(this.value)">
+          <option value="auto">умный (по времени дня)</option>
           <option value="overview">обзор и статистика</option>
           <option value="schedule">школьный график</option>
           <option value="add">новое задание</option>
@@ -1090,7 +1094,7 @@
 
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
       <div style="text-align: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted);">
-        <span style="color: var(--accent);">❖</span> • <span>v2.7.1</span>
+        <span style="color: var(--accent);">❖</span> • <span>v2.9.2</span>
       </div>
     </div>
   </div>
@@ -1140,6 +1144,7 @@
         <div class="form-group">
           <span class="label" id="editCompLabel">сложность:</span>
           <div class="seg" id="editComp" role="group" aria-labelledby="editCompLabel">
+            <button type="button" class="seg-btn" data-v="test" aria-pressed="false">1 мин</button>
             <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
             <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
             <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
@@ -1183,6 +1188,7 @@
         </svg>
         <div class="timer-digits-box">
           <div class="timer-digits" id="timerDigits">25:00</div>
+          <button type="button" id="btnHideTimerDigits" class="btn-act" onclick="toggleTimerDigits()" title="скрыть/показать время" style="font-size: 11px; padding: 3px 8px; margin-top: 4px; color: var(--muted);">👁 скрыть</button>
           <span class="badge" style="background: rgba(142,97,255,0.2); color: var(--accent); margin-top: 4px;" id="timerPhase">фаза работы</span>
         </div>
       </div>
@@ -1392,9 +1398,9 @@
     const DEFAULT_TITLE = document.title;
     const DATA_VERSION = 2;
     const VALID_THEMES = ['dark', 'light', 'purple', 'emerald', 'sunset'];
-    const VALID_TABS = ['overview', 'schedule', 'add', 'tasks', 'archive'];
+    const VALID_TABS = ['auto', 'overview', 'schedule', 'add', 'tasks', 'archive'];
     const VALID_PRIO = ['critical', 'urgent', 'important', 'normal', 'later'];
-    const VALID_COMP = ['easy', 'normal_comp', 'medium', 'hard'];
+    const VALID_COMP = ['test', 'easy', 'normal_comp', 'medium', 'hard'];
     const VALID_PERIODS = ['day', 'week', 'month', 'year', 'all'];
     const DAYS = { 1: 'понедельник', 2: 'вторник', 3: 'среда', 4: 'четверг', 5: 'пятница', 6: 'суббота' };
     const SHORT_DAYS = { 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт', 6: 'сб' };
@@ -1417,24 +1423,41 @@
   ]
 };
 
-function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
-  const s = String(subjName).toLowerCase();
-  const isWriting = /(алгебр|геометр|русск|физик|химия|матем|конспект|сочинен|черчен)/i.test(s);
-  const isReading = /(истор|литер|биолог|географ|информ|чтени|англ|обществ)/i.test(s);
+function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
+  const s = String(query).toLowerCase();
+  const isWriting = /(алгебр|геометр|русск|физик|хим|матем|конспект|сочинен|черчен|письм|тетрад)/i.test(s);
+  const isReading = /(истор|литер|биолог|географ|информ|чтени|англ|обществ|книг|учебник|параграф)/i.test(s);
   
   let steps = [];
+  let categoryName = 'общее восстановление';
+
   if (isWriting) {
-    steps.push(EXERCISE_STEPS.wrists[0], EXERCISE_STEPS.neck[1], EXERCISE_STEPS.wrists[1]);
+    categoryName = 'кисти и шея (письмо)';
+    steps.push(
+      { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: comp === 'test' ? 20 : 30, icon: '🤲' },
+      { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: comp === 'test' ? 20 : 35, icon: '✨' },
+      { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя', dur: comp === 'test' ? 20 : 30, icon: '✋' }
+    );
   } else if (isReading) {
-    steps.push(EXERCISE_STEPS.eyes[0], EXERCISE_STEPS.body[0], EXERCISE_STEPS.eyes[1]);
+    categoryName = 'глаза и движение (чтение)';
+    steps.push(
+      { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: comp === 'test' ? 20 : 30, icon: '👁' },
+      { title: 'встань со стула', desc: 'поднимись во весь рост, потянись и немного пройдись', dur: comp === 'test' ? 20 : 35, icon: '🧍' },
+      { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: comp === 'test' ? 20 : 25, icon: '👀' }
+    );
   } else {
-    steps.push(EXERCISE_STEPS.eyes[0], EXERCISE_STEPS.neck[0], EXERCISE_STEPS.neck[1]);
+    steps.push(
+      { title: 'отдых для глаз', desc: 'прикрой веки ладонями, полностью расслабь зрение', dur: comp === 'test' ? 20 : 30, icon: '😌' },
+      { title: 'мягкие наклоны шеи', desc: 'плавно наклоняй голову к правому и левому плечу', dur: comp === 'test' ? 20 : 35, icon: '💆' },
+      { title: 'потягивание', desc: 'подними руки над головой и мягко вытяни позвоночник', dur: comp === 'test' ? 20 : 30, icon: '✨' }
+    );
   }
 
   if (cycle >= 2 || comp === 'hard') {
-    steps.push(EXERCISE_STEPS.body[1]);
+    steps.push({ title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, выдох 6 сек', dur: comp === 'test' ? 20 : 35, icon: '🫁' });
   }
-  return steps;
+
+  return { steps, categoryName };
 }
     const PRIO = {
       // critical ставится только кнопкой автосортировки: вручную его выбрать нельзя.
@@ -1445,10 +1468,11 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       later: { text: 'позже', c: 'prio-later', b: 'badge-info' }
     };
     const COMP = {
-      easy:        { text: 'примерно 15 мин', t: 15, hint: 'устный предмет, быстрое повторение' },
-      normal_comp: { text: 'примерно 25 мин', t: 25, hint: 'небольшое письменное задание' },
-      medium:      { text: 'примерно 35 мин', t: 35, hint: 'объёмное домашнее задание, упражнения' },
-      hard:        { text: 'примерно 45 мин', t: 45, hint: 'проект, сочинение, подготовка к контрольной' }
+      test:        { text: 'тест 1 мин', short: '1 мин', t: 1, hint: 'быстрая проверка таймера' },
+      easy:        { text: 'примерно 15 мин', short: '≈15 мин', t: 15, hint: 'устный предмет, быстрое повторение' },
+      normal_comp: { text: 'примерно 25 мин', short: '≈25 мин', t: 25, hint: 'небольшое письменное задание' },
+      medium:      { text: 'примерно 35 мин', short: '≈35 мин', t: 35, hint: 'объёмное домашнее задание, упражнения' },
+      hard:        { text: 'примерно 45 мин', short: '≈45 мин', t: 45, hint: 'проект, сочинение, подготовка к контрольной' }
     };
     const PERIOD_LABEL = { day: 'за сегодня', week: 'за эту неделю', month: 'за этот месяц', year: 'за этот год', all: 'за всё время' };
     const CIRC = 2 * Math.PI * 96;
@@ -1484,6 +1508,33 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
     function getLocalToday(d = new Date()) {
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
+
+    function getNextLessonDate(subjName) {
+      if (!subjName) return '';
+      const s = subjName.toLowerCase().trim();
+      const today = new Date();
+      const todayDay = today.getDay() || 7; // 1 - пн ... 7 - вс
+
+      const matchingDays = [];
+      for (let d = 1; d <= getVisibleDayCount(); d++) {
+        const list = state.schedule[d] || [];
+        if (list.some(l => l.toLowerCase() === s || l.toLowerCase().includes(s))) {
+          matchingDays.push(d);
+        }
+      }
+      if (!matchingDays.length) return '';
+
+      for (let offset = 1; offset <= 7; offset++) {
+        const checkDate = new Date(today);
+        checkDate.setDate(today.getDate() + offset);
+        const dayOfWeek = checkDate.getDay() || 7;
+        if (matchingDays.includes(dayOfWeek)) {
+          return getLocalToday(checkDate);
+        }
+      }
+      return '';
+    }
+
     function esc(s) {
       if (s === null || s === undefined) return '';
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1630,6 +1681,10 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       pendingUndo = null;
       $('toast').classList.remove('undoable');
       animateBrandState(false);
+      if (tState.minimized) {
+        showIsland();
+        updateIslandUI();
+      }
     }
 
     function showToast(m, icon = '', duration = 5000, undoAction = null) {
@@ -1641,6 +1696,10 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       $('toastUndo').hidden = !undoAction;
       t.classList.toggle('undoable', !!undoAction);
       clearTimeout(toastTimer);
+      if (tState.minimized) {
+        $('brandTimer').style.display = 'none';
+        $('brandNotice').style.display = '';
+      }
       animateBrandState(true);
       toastTimer = setTimeout(restoreBrand, duration);
     }
@@ -1689,6 +1748,12 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
     }
     // Esc закрывает модалку, Tab не уходит за её пределы.
     document.addEventListener('keydown', e => {
+      // Закрытие окна приветствия по Escape
+      if (e.key === 'Escape' && $('welcomeModal') && $('welcomeModal').classList.contains('active')) {
+        e.preventDefault();
+        closeWelcomeModal();
+        return;
+      }
       // Полноэкранный таймер не модалка, но Esc должен его сворачивать.
       if (e.key === 'Escape' && !activeModal && timerIsActive()
           && $('timerView').classList.contains('active')
@@ -1811,6 +1876,183 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
         out.push(s);
       }
       return { list: out, truncated };
+    }
+
+    function cleanTaskText(rawText, subjName = '') {
+      if (!rawText) return '';
+      let s = ' ' + rawText.trim() + ' ';
+
+      // Удаляем префиксы дз без \b
+      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:дз|домашк\S*|задание(?:\s+на\s+дом)?)(?=[^\p{L}\p{N}]|$)/giu, ' ');
+
+      // Удаляем числовые и строковые даты
+      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до)?\s*\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?(?=[^\p{L}\p{N}]|$)/giu, ' ');
+      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до|в|во)?\s*(?:следующ\S*\s+)?(?:понедельник\S*|вторник\S*|сред\S*|четверг\S*|пятниц\S*|суббот\S*|воскресень\S*)(?=[^\p{L}\p{N}]|$)/giu, ' ');
+      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до|в|во)?\s*(?:сегодня\S*|завтра\S*|послезавтра)(?=[^\p{L}\p{N}]|$)/giu, ' ');
+
+      // Удаляем предмет по базе
+      if (subjName) {
+        const sLow = subjName.toLowerCase();
+        const item = MASTER_SUBJECTS.find(m => m.name.toLowerCase() === sLow || sLow.includes(m.name.toLowerCase().slice(0, 4)));
+        if (item && item.clean) {
+          s = s.replace(item.clean, ' ');
+        }
+      }
+
+      // Срезаем висячие предлоги
+      s = s.replace(/\s+/g, ' ').trim();
+      s = s.replace(/^(?:по|к|на|в|до|во)\s+/giu, '');
+      s = s.replace(/^[:;\s–—\-.,]+|[:;\s–—\-.,]+$/g, '').trim();
+
+      return s.length >= 2 ? s : rawText.trim();
+    }
+
+    // Мастер-словарь предметов с регулярными выражениями
+    const MASTER_SUBJECTS = [
+      { name: 'Русский язык',    regex: /(?:^|[^\p{L}\p{N}])(русск\S*|рус\s*яз\S*|русс\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:русск\S*|рус\s*яз\S*|русс\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Литература',      regex: /(?:^|[^\p{L}\p{N}])(литер\S*|литра|лит-ра)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:литер\S*|литра|лит-ра)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Алгебра',         regex: /(?:^|[^\p{L}\p{N}])(алгебр\S*|алг)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:алгебр\S*|алг)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Геометрия',       regex: /(?:^|[^\p{L}\p{N}])(геометр\S*|геом\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:геометр\S*|геом\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Математика',      regex: /(?:^|[^\p{L}\p{N}])(матем\S*|матеш\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:матем\S*|матеш\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Физика',          regex: /(?:^|[^\p{L}\p{N}])(физик\S*|физ-ка)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:физик\S*|физ-ка)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Физкультура',     regex: /(?:^|[^\p{L}\p{N}])(физ-?ра|спорт|физкультур\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:физ-?ра|спорт|физкультур\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Химия',           regex: /(?:^|[^\p{L}\p{N}])(хими\S*|хим)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:хими\S*|хим)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Биология',        regex: /(?:^|[^\p{L}\p{N}])(биолог\S*|биол|био)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:биолог\S*|биол|био)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'История',         regex: /(?:^|[^\p{L}\p{N}])(истори\S*|истор)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:истори\S*|истор)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Обществознание',  regex: /(?:^|[^\p{L}\p{N}])(обществ\S*|общаг\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:обществ\S*|общаг\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Английский язык', regex: /(?:^|[^\p{L}\p{N}])(английск\S*|англ\S*|ин\s*яз|инглиш)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:английск\S*|англ\S*|ин\s*яз|инглиш)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Информатика',     regex: /(?:^|[^\p{L}\p{N}])(информат\S*|инф[аеу]|информ)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:информат\S*|инф[аеу]|информ)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'География',       regex: /(?:^|[^\p{L}\p{N}])(географ\S*|геогр|гео)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:географ\S*|геогр|гео)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'Технология',      regex: /(?:^|[^\p{L}\p{N}])(технолог\S*|труд\S*)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:технолог\S*|труд\S*)(?=[^\p{L}\p{N}]|$)/giu },
+      { name: 'ОБЖ',             regex: /(?:^|[^\p{L}\p{N}])(обж)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:обж)(?=[^\p{L}\p{N}]|$)/giu }
+    ];
+
+    function parseTaskNaturalInput(text) {
+      if (!text || text.trim().length < 2) {
+        setDisplay('smartParseHint', false);
+        delete $('addSubj').dataset.userLocked;
+        delete $('addDay').dataset.userLocked;
+        delete $('addDue').dataset.userLocked;
+        delete $('addComp').dataset.userLocked;
+        delete $('addPrio').dataset.userLocked;
+        return;
+      }
+      const low = ' ' + text.toLowerCase() + ' ';
+      let detectedSubj = '';
+      let detectedDay = '';
+      let detectedDue = '';
+      let detectedComp = '';
+      let detectedPrio = '';
+
+      // 1. Определение предмета по мастер-словарю
+      if (!$('addSubj').dataset.userLocked) {
+        for (const item of MASTER_SUBJECTS) {
+          if (item.regex.test(low)) {
+            detectedSubj = item.name;
+            break;
+          }
+        }
+
+        // Ищем, есть ли найденный предмет в реальном расписании пользователя
+        if (detectedSubj) {
+          const sLow = detectedSubj.toLowerCase();
+          for (let d = 1; d <= getVisibleDayCount(); d++) {
+            const list = state.schedule[d] || [];
+            const found = list.find(l => l.toLowerCase().includes(sLow.slice(0, 4)));
+            if (found) {
+              detectedSubj = found;
+              detectedDay = String(d);
+              break;
+            }
+          }
+        }
+      }
+
+      // 2. Распознавание дат
+      if (!$('addDue').dataset.userLocked) {
+        const now = new Date();
+        const numDateMatch = low.match(/(?:^|[^\d])(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?=[^\d]|$)/);
+        if (numDateMatch) {
+          const day = parseInt(numDateMatch[1], 10);
+          const month = parseInt(numDateMatch[2], 10);
+          let year = numDateMatch[3] ? parseInt(numDateMatch[3], 10) : now.getFullYear();
+          if (year < 100) year += 2000;
+          const dObj = new Date(year, month - 1, day);
+          if (!isNaN(dObj.getTime())) detectedDue = getLocalToday(dObj);
+        } else if (low.includes('послезавтра')) {
+          const d = new Date(now); d.setDate(now.getDate() + 2);
+          detectedDue = getLocalToday(d);
+        } else if (low.includes('завтра')) {
+          const d = new Date(now); d.setDate(now.getDate() + 1);
+          detectedDue = getLocalToday(d);
+        } else if (low.includes('сегодня')) {
+          detectedDue = getLocalToday(now);
+        } else {
+          const weekMap = { 'понедельник': 1, 'вторник': 2, 'сред': 3, 'четверг': 4, 'пятниц': 5, 'суббот': 6 };
+          for (const [kw, dayNum] of Object.entries(weekMap)) {
+            if (low.includes(kw)) {
+              const curDay = now.getDay() || 7;
+              let diff = dayNum - curDay;
+              if (diff <= 0) diff += 7;
+              const target = new Date(now);
+              target.setDate(now.getDate() + diff);
+              detectedDue = getLocalToday(target);
+              detectedDay = String(dayNum);
+              break;
+            }
+          }
+        }
+
+        if (!detectedDue && detectedSubj) {
+          const autoNext = getNextLessonDate(detectedSubj);
+          if (autoNext) detectedDue = autoNext;
+        }
+      }
+
+      // 3. Сложность
+      if (!$('addComp').dataset.userLocked) {
+        if (/(проект|сочинен\S*|доклад\S*|презентац\S*|контрольн\S*|реферат\S*)/i.test(low)) {
+          detectedComp = 'hard';
+        } else if (/(?:номера|упр|задач)[^\d]*\d+[\s,]+\d+/i.test(low)) {
+          detectedComp = 'medium';
+        } else if (/(номер|упражнен\S*|параграф\S*|задач\S*|№|стр|страниц\S*)/i.test(low)) {
+          detectedComp = 'normal_comp';
+        } else if (/(устно|прочитать|выучить|повторить|стих\S*|правило)/i.test(low)) {
+          detectedComp = 'easy';
+        }
+      }
+
+      // 4. Срочность
+      if (!$('addPrio').dataset.userLocked) {
+        if (/(срочно|быстро|долг|горит|важно)/i.test(low)) detectedPrio = 'urgent';
+      }
+
+      // Применение к интерфейсу
+      const changes = [];
+      if (detectedSubj && !$('addSubj').dataset.userLocked) {
+        const targetDay = (detectedDay && isDayEnabled(detectedDay)) ? detectedDay : ($('addDay').value || '1');
+        if (!isDayEnabled($('addDay').value)) $('addDay').value = targetDay;
+        fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, detectedSubj);
+        changes.push(`предмет: ${detectedSubj}`);
+      }
+
+      if (detectedDue && !$('addDue').dataset.userLocked) {
+        $('addDue').value = detectedDue;
+        changes.push(`срок: ${shortDate(detectedDue)}`);
+      }
+
+      if (detectedComp && !$('addComp').dataset.userLocked) setSegValue('addComp', detectedComp);
+      if (detectedPrio && !$('addPrio').dataset.userLocked) setSegValue('addPrio', detectedPrio);
+
+      const curSubj = resolveSubj($('addSubj'), $('addSubjOther')) || detectedSubj;
+      const cleaned = cleanTaskText(text, curSubj);
+      const hintEl = $('smartParseHint');
+      if (changes.length) {
+        hintEl.textContent = `✨ распознано: ${changes.join(' · ')}${cleaned && cleaned !== text ? ` ➔ в задании: «${cleaned}»` : ''}`;
+        hintEl.style.display = 'block';
+      } else {
+        hintEl.style.display = 'none';
+      }
     }
 
     function normalizeSchedule(v) {
@@ -2279,6 +2521,11 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       return getLocalToday(d);
     }
     function prepareAddForm() {
+      delete $('addSubj').dataset.userLocked;
+      delete $('addDay').dataset.userLocked;
+      delete $('addDue').dataset.userLocked;
+      delete $('addComp').dataset.userLocked;
+      delete $('addPrio').dataset.userLocked;
       const due = $('addDue');
       due.min = getLocalToday();
       if (!due.value || !isValidDate(due.value) || due.value < getLocalToday()) due.value = tomorrowStr();
@@ -2290,8 +2537,9 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       if (!isDayEnabled(day)) { showToast('выберите день недели', '!'); return; }
       const subj = resolveSubj($('addSubj'), $('addSubjOther'));
       if (!subj) { showToast('укажите предмет', '!'); return; }
-      const text = $('addText').value.trim();
-      if (!text) { showToast('введите текст задания', '!'); return; }
+      const textRaw = $('addText').value.trim();
+      if (!textRaw) { showToast('введите текст задания', '!'); return; }
+      const text = cleanTaskText(textRaw, subj) || textRaw;
       const due = ($('addDue').value || '').trim();
       const task = normalizeTask({
         id: newId(), day, subj, text, due,
@@ -2306,6 +2554,12 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       setSegValue('addComp', 'normal_comp');
       renderAll();
       showToast('задание добавлено в план');
+      // Сбросить замки ручного выбора
+      delete $('addSubj').dataset.userLocked;
+      delete $('addDay').dataset.userLocked;
+      delete $('addDue').dataset.userLocked;
+      delete $('addPrio').dataset.userLocked;
+      delete $('addComp').dataset.userLocked;
       tab('tasks', navBtn('tasks'));
     }
 
@@ -2363,13 +2617,20 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
         // Рядом с датой — понятная подпись: «завтра» читается быстрее, чем 2026-10-20.
         const left = daysLeftLabel(t.due);
         const sd = esc(shortDate(t.due));
+        const daysWeekShort = ['', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+        let dueDayOfWeek = '';
+        if (t.due && isValidDate(t.due)) {
+          const dt = new Date(t.due + 'T00:00:00');
+          dueDayOfWeek = daysWeekShort[dt.getDay() || 7];
+        }
+        const datePrefix = sd ? (dueDayOfWeek ? `${sd} (${dueDayOfWeek})` : sd) : '';
         const dBadge = !t.due
           ? '<span class="badge badge-neutral">без срока</span>'
-          : isOverdue(t) ? `<span class="badge badge-danger">${esc(left)}</span>`
-          : left === 'сегодня' ? '<span class="badge badge-warning">сегодня</span>'
-          : left === 'завтра' ? '<span class="badge badge-warning">завтра</span>'
-          : left === 'послезавтра' ? '<span class="badge badge-warning">послезавтра</span>'
-          : `<span class="badge badge-info">${sd} · ${esc(left)}</span>`;
+          : isOverdue(t) ? `<span class="badge badge-danger">${datePrefix ? datePrefix + ' · ' : ''}${esc(left)}</span>`
+          : left === 'сегодня' ? `<span class="badge badge-warning">сегодня (${dueDayOfWeek})</span>`
+          : left === 'завтра' ? `<span class="badge badge-warning">завтра (${dueDayOfWeek})</span>`
+          : left === 'послезавтра' ? `<span class="badge badge-warning">послезавтра (${dueDayOfWeek})</span>`
+          : `<span class="badge badge-info">${datePrefix} · ${esc(left)}</span>`;
         const id = esc(t.id);
         const isActive = timerIsActive() && tState.id === t.id;
         const taskCard = `
@@ -2385,7 +2646,6 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
             <div class="task-meta">
               ${dBadge}
               <span title="${esc(COMP[t.comp].hint)}">${COMP[t.comp].text}</span>
-              ${t.day ? `<span>${DAYS[t.day]}</span>` : ''}
             </div>
             <div class="task-actions">
               <button class="btn-act btn-success" data-act="done" data-id="${id}" title="выполнить" aria-label="выполнить">готово</button>
@@ -2551,6 +2811,7 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
     let breakStepLeftMs = 0;
     let breakStepTotalMs = 0;
     let breakChillMode = false;
+    let timerDigitsHidden = false;
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
 
@@ -2632,6 +2893,23 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       setDisplay('btnGoBreak', mode === 'work');
       setDisplay('btnAdd5', mode === 'work');
       setDisplay('btnBackWork', mode === 'break');
+      if (mode === 'break') {
+        const nextTask = state.tasks.find(x => x.id !== tState.id);
+        const backWorkBtn = $('btnBackWork');
+        if (backWorkBtn) {
+          if (nextTask) {
+            backWorkBtn.textContent = `⚡ начать следующее: ${nextTask.subj} (${COMP[nextTask.comp]?.short || '≈25 мин'}) ▶`;
+            backWorkBtn.onclick = () => {
+              hidePhaseModal();
+              closeTimerView();
+              openTimer(nextTask.id);
+            };
+          } else {
+            backWorkBtn.textContent = 'ещё один рабочий цикл';
+            backWorkBtn.onclick = startWorkAgain;
+          }
+        }
+      }
       showModal($('timerPhaseModal'), mode === 'work' ? $('btnGoBreak') : $('btnBackWork'));
     }
     function hidePhaseModal() {
@@ -2651,10 +2929,26 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
 
     function updateTimerUI() {
       const sec = Math.ceil(tState.leftMs / 1000);
-      $('timerDigits').textContent = `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+      const d = $('timerDigits');
+      if (d) {
+        if (timerDigitsHidden) {
+          d.textContent = '····';
+        } else {
+          d.textContent = `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+        }
+      }
       const frac = tState.totalMs ? tState.leftMs / tState.totalMs : 0;
       $('timerBar').style.strokeDashoffset = (1 - frac) * CIRC;
       updateMiniUI();
+    }
+
+    function toggleTimerDigits() {
+      timerDigitsHidden = !timerDigitsHidden;
+      const btn = $('btnHideTimerDigits');
+      if (btn) {
+        btn.textContent = timerDigitsHidden ? '👁 показать' : '👁 скрыть';
+      }
+      updateTimerUI();
     }
 
     function setTimerBtn(running) {
@@ -2827,7 +3121,20 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       breakStepLeftMs = 0;
       breakStepTotalMs = 0;
       breakChillMode = false;
-      tState = { id, phase: 'work', cycle: 1, taskComp: t.comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
+      timerDigitsHidden = false;
+      tState = { 
+        id, 
+        subj: t.subj || '', 
+        taskText: t.text || '', 
+        phase: 'work', 
+        cycle: 1, 
+        taskComp: t.comp, 
+        totalMs: 0, 
+        leftMs: 0, 
+        endAt: 0, 
+        lastTs: 0, 
+        running: false 
+      };
       $('timerSubj').textContent = t.subj;
       $('timerTitle').textContent = t.text;
       hidePhaseModal();
@@ -2841,6 +3148,7 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function getBreakDurationMinutes(comp = 'normal_comp') {
+      if (comp === 'test') return 1;
       if (comp === 'easy') return 3;
       if (comp === 'hard') return 7;
       return 5;
@@ -2854,8 +3162,8 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
     function startStandaloneBreak(comp = 'normal_comp') {
       if (timerIsActive()) { showToast('сначала завершите текущую фокус-сессию', 'i'); return; }
       breakPlan = [];
-      breakChillMode = true;
-      tState = { id: null, phase: 'break', cycle: 1, taskComp: comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
+      breakChillMode = false;
+      tState = { id: null, subj: 'перерыв', taskText: 'разминка', phase: 'break', cycle: 1, taskComp: comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
       $('timerSubj').textContent = 'перерыв';
       $('timerTitle').textContent = 'разминка';
       hidePhaseModal();
@@ -2908,11 +3216,7 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       tState.running = false;
       tState.minimized = false;
       tState.id = null;
-      breakPlan = [];
-      breakStepIdx = 0;
-      breakStepLeftMs = 0;
-      breakStepTotalMs = 0;
-      breakChillMode = false;
+      timerDigitsHidden = false;
       save();
       const v = $('timerView');
       v.classList.remove('active');
@@ -2958,8 +3262,9 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       breakChillMode = false;
       breakStepIdx = 0;
       const task = tState.id ? state.tasks.find(x => x.id === tState.id) : null;
-      const subj = task ? task.subj : '';
-      breakPlan = generateSmartRoutine(subj, tState.cycle, tState.taskComp);
+      const query = (tState.subj || (task ? task.subj : '')) + ' ' + (tState.taskText || (task ? task.text : ''));
+      const routine = generateSmartRoutine(query, tState.cycle, tState.taskComp);
+      breakPlan = routine.steps;
       loadBreakStep(0);
     }
 
@@ -3422,7 +3727,32 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       $('editForm').addEventListener('submit', saveEditTask);
 
       $('addDay').addEventListener('change', () => fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value));
-      $('addSubj').addEventListener('change', () => toggleOther($('addSubj'), $('addSubjOther')));
+      $('addSubj').addEventListener('change', () => {
+        toggleOther($('addSubj'), $('addSubjOther'));
+        const subj = resolveSubj($('addSubj'), $('addSubjOther'));
+        if (subj && subj !== 'другое') {
+          const autoDue = getNextLessonDate(subj);
+          if (autoDue && (!$('addDue').value || $('addDue').value === tomorrowStr())) {
+            $('addDue').value = autoDue;
+          }
+        }
+      });
+      $('addText').addEventListener('input', e => parseTaskNaturalInput(e.target.value));
+      $('addText').addEventListener('blur', e => {
+        const subj = resolveSubj($('addSubj'), $('addSubjOther'));
+        const cleaned = cleanTaskText(e.target.value, subj);
+        if (cleaned && cleaned !== e.target.value) {
+          e.target.value = cleaned;
+          parseTaskNaturalInput(cleaned);
+        }
+      });
+
+      // Защита ручного выбора: помечаем заблокированными при изменении
+      $('addSubj').addEventListener('change', () => { $('addSubj').dataset.userLocked = '1'; });
+      $('addDay').addEventListener('change', () => { $('addDay').dataset.userLocked = '1'; });
+      $('addDue').addEventListener('change', () => { $('addDue').dataset.userLocked = '1'; });
+      document.querySelectorAll('#addPrio .seg-btn').forEach(b => b.addEventListener('click', () => { $('addPrio').dataset.userLocked = '1'; }));
+      document.querySelectorAll('#addComp .seg-btn').forEach(b => b.addEventListener('click', () => { $('addComp').dataset.userLocked = '1'; }));
       $('editDay').addEventListener('change', () => fillSubjects($('editSubj'), $('editSubjOther'), $('editDay').value));
       $('editSubj').addEventListener('change', () => toggleOther($('editSubj'), $('editSubjOther')));
 
@@ -3517,8 +3847,20 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
 
       renderAll();
 
-      const start = VALID_TABS.includes(state.start) ? state.start : 'overview';
-      tab(start, navBtn(start));
+      const start = state.start;
+      let resolvedStart = start;
+      if (resolvedStart === 'auto' || !VALID_TABS.includes(resolvedStart)) {
+        const hr = new Date().getHours();
+        resolvedStart = hr < 14 ? 'overview' : 'tasks';
+      }
+      tab(resolvedStart, navBtn(resolvedStart));
+
+      const overdueCount = state.tasks.filter(isOverdue).length;
+      if (overdueCount > 0) {
+        setTimeout(() => {
+          showToast(`внимание: в плане есть просроченные задания (${overdueCount})`, '⚠️');
+        }, 1200);
+      }
 
       if (loadWarnings.length) {
         showToast('часть данных повреждена и сохранена отдельно (ключи ep_corrupt_*)', '!');
@@ -3543,7 +3885,7 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
 
   <!-- ОКНО ПРИВЕТСТВИЯ -->
   <div class="modal-overlay" id="welcomeModal" style="z-index: 200; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);">
-    <div class="glass modal-box" style="background: var(--card-solid, #161b2e); border: 1px solid var(--border); max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 24px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+    <div class="glass modal-box" style="background: var(--card-solid, #161b2e); border: 1px solid var(--border); max-width: 540px; max-height: 85vh; overflow-y: auto; padding: 24px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 20px; color: var(--accent);">❖</span>
@@ -3553,24 +3895,33 @@ function generateSmartRoutine(subjName = '', cycle = 1, comp = 'normal_comp') {
       </div>
 
       <div style="font-size: 13px; line-height: 1.6; color: var(--text); display: flex; flex-direction: column; gap: 14px;">
-        <div>
-          <b style="color: var(--accent);">Школьный график</b> — заполняйте уроки вручную по дням недели или импортируйте расписание из файла .xls / .xlsx одним нажатием.
+        <div style="padding: 10px 12px; background: rgba(142,97,255,0.08); border-radius: 10px; border: 1px solid rgba(142,97,255,0.15);">
+          <b style="color: var(--accent);">📅 Школьный график</b><br>
+          Заполняйте уроки по дням недели или импортируйте расписание из .xls / .xlsx одним нажатием.
         </div>
-        <div>
-          <b style="color: var(--accent);">Новое задание</b> — добавляйте домашние задания с выбором предмета из расписания, указывайте срок сдачи, срочность и расчётное время выполнения (от 15 до 45 минут).
+        <div style="padding: 10px 12px; background: rgba(6,214,160,0.08); border-radius: 10px; border: 1px solid rgba(6,214,160,0.15);">
+          <b style="color: var(--success);">✨ Умный ввод заданий</b><br>
+          Наберите «дз по русскому завтра сочинение» — система сама определит предмет, срок и сложность. Поддерживает сокращения: биол, геом, англ, инф, физра.
         </div>
-        <div>
-          <b style="color: var(--accent);">План работы и умная сортировка</b> — расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте задачи по категориям и выполняйте встроенные физкультминутки между заданиями.
+        <div style="padding: 10px 12px; background: rgba(255,174,0,0.08); border-radius: 10px; border: 1px solid rgba(255,174,0,0.15);">
+          <b style="color: #ffaa00;">⚡ План работы и умная сортировка</b><br>
+          Расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте задачи и выполняйте встроенные физкультминутки.
         </div>
-        <div>
-          <b style="color: var(--accent);">Фокус-таймер и островок</b> — запускайте таймер под время конкретной задачи; сверните таймер в верхнюю капсулу eduplan, чтобы пользоваться планировщиком без потери отсчёта.
+        <div style="padding: 10px 12px; background: rgba(255,107,129,0.08); border-radius: 10px; border: 1px solid rgba(255,107,129,0.15);">
+          <b style="color: #ff6b81;">🧠 Умная разминка</b><br>
+          После каждой задачи — персональный набор упражнений: для письменных предметов — кисти и шея, для чтения — глаза и движение.
         </div>
-        <div>
-          <b style="color: var(--accent);">Настройки (кнопка ≡ справа внизу)</b> — выбирайте тему оформления Liquid Glass, включайте шестидневную неделю, синхронизируйте данные между устройствами через облако Supabase.
+        <div style="padding: 10px 12px; background: rgba(142,97,255,0.08); border-radius: 10px; border: 1px solid rgba(142,97,255,0.15);">
+          <b style="color: var(--accent);">🎯 Фокус-таймер и Dynamic Island</b><br>
+          Запускайте таймер под задачу; сверните в капсулу сверху — продолжайте работать. Кнопка 👁 скрывает отсчёт, чтобы не отвлекать.
+        </div>
+        <div style="padding: 10px 12px; background: rgba(100,149,237,0.08); border-radius: 10px; border: 1px solid rgba(100,149,237,0.15);">
+          <b style="color: #6495ed;">🔧 Настройки (≡ справа внизу)</b><br>
+          Тема Liquid Glass, 6-дневная неделя, облачная синхронизация Supabase, экспорт/импорт данных.
         </div>
       </div>
 
-      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 20px;">Начать работу</button>
+      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 20px;">Понятно, начать!</button>
     </div>
   </div>
 
