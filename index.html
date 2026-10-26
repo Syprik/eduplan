@@ -55,15 +55,15 @@
       --seg-bg: rgba(0, 0, 0, 0.25);
       --chip-bg: rgba(255, 255, 255, 0.05);
       --day-bg: rgba(255, 255, 255, 0.04);
-      --overlay: rgba(0, 0, 0, 0.7);
+      --overlay: rgba(0, 0, 0, 0.9);
     }
     [data-theme="light"] {
       --bg: #e2e8f0;
       --card: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.25) 100%);
       --card-solid: #f1f5f9;
-      --card-sub: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.48) 100%);
-      --border: rgba(255, 255, 255, 0.65);
-      --glass-highlight: rgba(255, 255, 255, 0.85);
+      --card-sub: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.05) 100%);
+      --border: rgba(255, 255, 255, 0.15);
+      --glass-highlight: rgba(255, 255, 255, 0.18);
       --glass-rim: rgba(67, 97, 238, 0.12);
       --accent: #4361ee;
       --grad: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
@@ -81,7 +81,7 @@
       --seg-bg: rgba(0, 0, 0, 0.06);
       --chip-bg: rgba(255, 255, 255, 0.5);
       --day-bg: rgba(255, 255, 255, 0.5);
-      --overlay: rgba(20, 26, 41, 0.45);
+      --overlay: rgba(20, 26, 41, 0.15);
     }
     [data-theme="purple"] {
       --bg: #110521;
@@ -804,6 +804,102 @@
     .timer-digits { font-size: 44px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
     #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 190; }
+
+    .settings-brand-pill {
+      position: relative;
+      margin-top: 18px;
+      padding: 10px 24px;
+      border-radius: 999px;
+      background: var(--card-sub);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      box-shadow: inset 0 1px 1.5px var(--glass-highlight);
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .settings-brand-pill.is-notifying {
+      border-radius: 20px;
+      min-height: 48px;
+      padding: 10px 20px;
+      border-color: var(--accent);
+      box-shadow: inset 0 1px 2px var(--glass-highlight), 0 0 18px var(--glow);
+    }
+    .settings-brand-pill.is-danger {
+      border-color: var(--danger) !important;
+      box-shadow: inset 0 1px 2px var(--glass-highlight), 0 0 18px rgba(255, 77, 109, 0.35) !important;
+    }
+    .settings-brand-pill.is-success {
+      border-color: var(--success) !important;
+      box-shadow: inset 0 1px 2px var(--glass-highlight), 0 0 18px rgba(6, 214, 160, 0.35) !important;
+    }
+    .settings-pill-default,
+    .settings-pill-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      transition: all 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+      width: 100%;
+      text-align: center;
+    }
+    .settings-pill-default {
+      color: var(--muted);
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+    .settings-pill-logo {
+      color: var(--accent);
+      font-size: 16px;
+      filter: drop-shadow(0 0 5px var(--glow));
+    }
+    .settings-pill-ver {
+      letter-spacing: 0.5px;
+    }
+    .settings-pill-notice {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      opacity: 0;
+      transform: translateY(12px) scale(0.94);
+      filter: blur(4px);
+      pointer-events: none;
+      line-height: 1.3;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      text-align: center;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .settings-notice-icon {
+      font-size: 13px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .settings-notice-msg {
+      max-width: 100%;
+      word-break: normal;
+    }
+    .settings-brand-pill.is-notifying .settings-pill-default {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.9);
+      filter: blur(5px);
+      pointer-events: none;
+    }
+    .settings-brand-pill.is-notifying .settings-pill-notice {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -1036,10 +1132,17 @@
       </div>
       <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div id="sixDayLabel" style="font-weight:700;font-size:13px;">шестидневная неделя</div>
-          <div style="font-size:11px;color:var(--muted);">включить субботу в расписание</div>
+          <div id="notifLabel" style="font-weight:700;font-size:13px;">системные уведомления</div>
+          <div style="font-size:11px;color:var(--muted);">пуши таймера при свёрнутом браузере</div>
         </div>
-        <input type="checkbox" id="setSixDay" onchange="toggleSixDay(this.checked)" aria-labelledby="sixDayLabel" style="width:20px;height:20px;accent-color:var(--accent);">
+        <input type="checkbox" id="setNotif" onchange="toggleNotif(this.checked)" aria-labelledby="notifLabel" style="width:20px;height:20px;accent-color:var(--accent);">
+      </div>
+      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">приветствие при запуске</div>
+          <div style="font-size:11px;color:var(--muted);">показывать экран с описанием функций</div>
+        </div>
+        <input type="checkbox" id="setShowWelcome" onchange="toggleShowWelcome(this.checked)" aria-labelledby="setShowWelcome" style="width:20px;height:20px;accent-color:var(--accent);">
       </div>
       <div class="form-group">
         <label class="label" for="setTheme">тема liquid glass:</label>
@@ -1093,8 +1196,16 @@
       </div>
 
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
-      <div style="text-align: center; margin-top: 18px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; font-weight: 700; color: var(--muted);">
-        <span style="color: var(--accent);">❖</span> • <span>v3.0.0</span>pre-release
+      
+      <!-- Анимированная капсула настроек -->
+      <div class="settings-brand-pill" id="setModalFooter">
+        <div class="settings-pill-default" id="setModalFooterDefault">
+          <span class="settings-pill-logo">❖</span> • <span class="settings-pill-ver">v3.2.0</span>
+        </div>
+        <div class="settings-pill-notice" id="setModalFooterNotice" aria-live="polite">
+          <span id="setNoticeIcon" class="settings-notice-icon"></span>
+          <span id="setNoticeMsg" class="settings-notice-msg"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -1166,7 +1277,7 @@
           <div class="mini-sub" id="miniTitle">задание</div>
         </div>
         <button class="mini-btn primary" id="miniToggle" onclick="toggleTimer()" aria-label="пауза или продолжить" title="пауза / продолжить">Пауза</button>
-        <button class="mini-btn" onclick="expandTimer()" aria-label="развернуть таймер" title="развернуть">⤢</button>
+        <button class="mini-btn" onclick="expandTimer()" aria-label="развернуть таймер" title="развернуть">развернуть</button>
       </div>
       <div class="mini-bar"><i id="miniBar"></i></div>
     </div>
@@ -1188,7 +1299,7 @@
         </svg>
         <div class="timer-digits-box">
           <div class="timer-digits" id="timerDigits">25:00</div>
-          <button type="button" id="btnHideTimerDigits" class="btn-act" onclick="toggleTimerDigits()" title="скрыть/показать время" style="font-size: 11px; padding: 3px 8px; margin-top: 4px; color: var(--muted);">👁 скрыть</button>
+          <button type="button" id="btnHideTimerDigits" class="btn-act" onclick="toggleTimerDigits()" title="скрыть/показать время" style="font-size: 11px; padding: 3px 8px; margin-top: 4px; color: var(--muted);">скрыть</button>
           <span class="badge" style="background: rgba(142,97,255,0.2); color: var(--accent); margin-top: 4px;" id="timerPhase">фаза работы</span>
         </div>
       </div>
@@ -1202,7 +1313,6 @@
         </div>
 
         <div id="breakActiveStep" style="display: flex; align-items: center; gap: 12px; margin: 10px 0;">
-          <span id="stepIcon" style="font-size: 28px; flex-shrink: 0;">👁</span>
           <div style="flex: 1; min-width: 0;">
             <div id="stepTitle" style="font-weight: 800; font-size: 14px; color: var(--text);">правило 20-20-20</div>
             <div id="stepDesc" style="font-size: 11.5px; color: var(--muted); line-height: 1.35; margin-top: 2px;">посмотри в окно на самый дальний объект</div>
@@ -1271,6 +1381,18 @@
       const email = $('auth-email').value.trim();
       const password = $('auth-password').value.trim();
       if (!email || !password) return showToast('введите email и пароль', '!');
+      
+      const emailLower = email.toLowerCase();
+      if (emailLower.includes('@mail.ru') || emailLower.includes('@bk.ru') || emailLower.includes('@inbox.ru')) {
+        showToast('mail.ru временно не поддерживается. нужен gmail или outlook', '!');
+        return;
+      }
+      
+      if (!email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@yahoo.com')) {
+        showToast('используйте почту gmail, outlook или yahoo', '!');
+        return;
+      }
+      
       const { data, error } = await sbClient.auth.signUp({ email, password });
       if (error) {
         showToast('ошибка регистрации: ' + error.message, '!');
@@ -1358,7 +1480,6 @@
 
           if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
           if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
-          if (c.ep_sixday !== undefined) state.sixDay = c.ep_sixday === 'true';
           if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
           if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
           if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
@@ -1387,7 +1508,7 @@
 
           if (showNotify && !_cloudSyncToastShown) {
             _cloudSyncToastShown = true;
-            showToast('данные синхронизированы с облаком', '☁️');
+            showToast('данные синхронизированы с облаком');
           }
         }
       } catch (err) {
@@ -1409,20 +1530,20 @@
     const SHORT_DAYS = { 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт', 6: 'сб' };
     const EXERCISE_STEPS = {
   wrists: [
-    { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: 25, icon: '🤲' },
-    { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя другой рукой', dur: 25, icon: '✋' }
+    { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: 25 },
+    { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя другой рукой', dur: 25 }
   ],
   eyes: [
-    { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: 25, icon: '👁' },
-    { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: 20, icon: '👀' }
+    { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: 25 },
+    { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: 20 }
   ],
   neck: [
-    { title: 'мягкие наклоны шеи', desc: 'опусти ухо к правому плечу на 10 сек, затем плавно к левому', dur: 30, icon: '💆' },
-    { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: 30, icon: '✨' }
+    { title: 'мягкие наклоны шеи', desc: 'опусти ухо к правому плечу на 10 сек, затем плавно к левому', dur: 30 },
+    { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: 30 }
   ],
   body: [
-    { title: 'встань со стула', desc: 'поднимись во весь рост, потянись руками к потолку', dur: 30, icon: '🧍' },
-    { title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, медленный выдох 6 сек', dur: 35, icon: '🫁' }
+    { title: 'встань со стула', desc: 'поднимись во весь рост, потянись руками к потолку', dur: 30 },
+    { title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, медленный выдох 6 сек', dur: 35 }
   ]
 };
 
@@ -1437,27 +1558,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   if (isWriting) {
     categoryName = 'кисти и шея (письмо)';
     steps.push(
-      { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: comp === 'test' ? 20 : 30, icon: '🤲' },
-      { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: comp === 'test' ? 20 : 35, icon: '✨' },
-      { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя', dur: comp === 'test' ? 20 : 30, icon: '✋' }
+      { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: comp === 'test' ? 20 : 30 },
+      { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: comp === 'test' ? 20 : 35 },
+      { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя', dur: comp === 'test' ? 20 : 30 }
     );
   } else if (isReading) {
     categoryName = 'глаза и движение (чтение)';
     steps.push(
-      { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: comp === 'test' ? 20 : 30, icon: '👁' },
-      { title: 'встань со стула', desc: 'поднимись во весь рост, потянись и немного пройдись', dur: comp === 'test' ? 20 : 35, icon: '🧍' },
-      { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: comp === 'test' ? 20 : 25, icon: '👀' }
+      { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: comp === 'test' ? 20 : 30 },
+      { title: 'встань со стула', desc: 'поднимись во весь рост, потянись и немного пройдись', dur: comp === 'test' ? 20 : 35 },
+      { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: comp === 'test' ? 20 : 25 }
     );
   } else {
     steps.push(
-      { title: 'отдых для глаз', desc: 'прикрой веки ладонями, полностью расслабь зрение', dur: comp === 'test' ? 20 : 30, icon: '😌' },
-      { title: 'мягкие наклоны шеи', desc: 'плавно наклоняй голову к правому и левому плечу', dur: comp === 'test' ? 20 : 35, icon: '💆' },
-      { title: 'потягивание', desc: 'подними руки над головой и мягко вытяни позвоночник', dur: comp === 'test' ? 20 : 30, icon: '✨' }
+      { title: 'отдых для глаз', desc: 'прикрой веки ладонями, полностью расслабь зрение', dur: comp === 'test' ? 20 : 30 },
+      { title: 'мягкие наклоны шеи', desc: 'плавно наклоняй голову к правому и левому плечу', dur: comp === 'test' ? 20 : 35 },
+      { title: 'потягивание', desc: 'подними руки над головой и мягко вытяни позвоночник', dur: comp === 'test' ? 20 : 30 }
     );
   }
 
   if (cycle >= 2 || comp === 'hard') {
-    steps.push({ title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, выдох 6 сек', dur: comp === 'test' ? 20 : 35, icon: '🫁' });
+    steps.push({ title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, выдох 6 сек', dur: comp === 'test' ? 20 : 35 });
   }
 
   return { steps, categoryName };
@@ -1496,15 +1617,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       work: 25, rest: 5, curDay: 1, filter: 'all', period: 'day',
       doneTotal: 0,            // сколько задач выполнено всего (не зависит от очистки архива)
       focus: {},               // { 'YYYY-MM-DD': миллисекунды фокуса }
-      sixDay: false,
+      notif: false,            // системные уведомления (push)
+      welcomeShown: true,      // показывать приветствие при запуске
       schedule: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
       tasks: [], archive: []
     };
     const loadWarnings = [];
-    function getVisibleDayCount() { return state.sixDay ? 6 : 5; }
     function isDayEnabled(day) {
       const n = Number(day);
-      return Number.isInteger(n) && n >= 1 && n <= getVisibleDayCount();
+      return Number.isInteger(n) && n >= 1 && n <= 6;
     }
 
     // ---------- Утилиты ----------
@@ -1519,7 +1640,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const todayDay = today.getDay() || 7; // 1 - пн ... 7 - вс
 
       const matchingDays = [];
-      for (let d = 1; d <= getVisibleDayCount(); d++) {
+      for (let d = 1; d <= 6; d++) {
         const list = state.schedule[d] || [];
         if (list.some(l => l.toLowerCase() === s || l.toLowerCase().includes(s))) {
           matchingDays.push(d);
@@ -1690,7 +1811,70 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
     }
 
+    // ---------- Системные уведомления ----------
+    async function toggleNotif(en) {
+      if (en) {
+        if (!('Notification' in window)) {
+          showToast('браузер не поддерживает системные уведомления', '!');
+          $('setNotif').checked = false;
+          state.notif = false;
+          save();
+          return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          showToast('доступ к уведомлениям заблокирован в браузере', '!');
+          $('setNotif').checked = false;
+          state.notif = false;
+          save();
+          return;
+        }
+        state.notif = true;
+        save();
+        showToast('системные уведомления включены', '🔔');
+        sendNotification('eduplan ❖', { body: 'уведомления успешно подключены!' });
+      } else {
+        state.notif = false;
+        save();
+        showToast('уведомления выключены');
+      }
+    }
+
+    function sendNotification(title, options = {}) {
+      if (!state.notif || !('Notification' in window) || Notification.permission !== 'granted') return;
+      const defaultOpts = {
+        icon: './apple-touch-icon.png',
+        badge: './apple-touch-icon.png',
+        vibrate: [200, 100, 200],
+        ...options
+      };
+
+      // 1. Для Windows и ПК: стреляем сразу напрямую, без ожидания воркера
+      try {
+        const notif = new Notification(title, defaultOpts);
+        notif.onclick = () => {
+          window.focus();
+          notif.close();
+        };
+        return;
+      } catch (e) {
+        // Если на мобилке захнычет, что нужен Service Worker — идём дальше
+      }
+
+      // 2. Для мобильного Android: отправляем через воркер без зависания await
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (reg && reg.showNotification) {
+            reg.showNotification(title, defaultOpts);
+          }
+        }).catch(() => {});
+      }
+    }
+
     function showToast(m, icon = '', duration = 5000, undoAction = null) {
+      if ($('setModal') && $('setModal').classList.contains('active')) {
+        showSettingsNotice(m, icon, duration);
+      }
       const t = $('toast');
       $('toastMsg').textContent = m;
       $('toastIcon').textContent = icon;
@@ -1811,12 +1995,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const data = {
         ep_theme: state.theme,
         ep_liquid: String(state.liquid),
-        ep_sixday: String(state.sixDay),
         ep_start: state.start,
         ep_period: state.period,
         ep_work: String(state.work),
         ep_rest: String(state.rest),
         ep_done: String(state.doneTotal),
+        ep_notif: String(state.notif),
+        ep_welcomescreen: String(state.welcomeShown),
         ep_focus: JSON.stringify(state.focus),
         ep_sched: JSON.stringify(state.schedule),
         ep_tasks: JSON.stringify(state.tasks),
@@ -1959,7 +2144,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         // Ищем, есть ли найденный предмет в реальном расписании пользователя
         if (detectedSubj) {
           const sLow = detectedSubj.toLowerCase();
-          for (let d = 1; d <= getVisibleDayCount(); d++) {
+          for (let d = 1; d <= 6; d++) {
             const list = state.schedule[d] || [];
             const found = list.find(l => l.toLowerCase().includes(sLow.slice(0, 4)));
             if (found) {
@@ -2038,6 +2223,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (detectedSubj && !$('addSubj').dataset.userLocked) {
         if (!isDayEnabled($('addDay').value)) $('addDay').value = '1';
         fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, detectedSubj);
+        // Если предмета нет в выпадающем списке, переключаем на самостоятельно и вписываем
+        const existsInSelect = [...$('addSubj').options].some(o => o.value === detectedSubj);
+        if (!existsInSelect) {
+          $('addSubj').value = 'самостоятельно';
+          toggleOther($('addSubj'), $('addSubjOther'));
+          $('addSubjOther').value = detectedSubj;
+        }
         changes.push(`предмет: ${detectedSubj}`);
       } else if (detectedDay && isDayEnabled(detectedDay) && !$('addSubj').dataset.userLocked) {
         fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
@@ -2055,7 +2247,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const cleaned = cleanTaskText(text, curSubj);
       const hintEl = $('smartParseHint');
       if (changes.length) {
-        hintEl.textContent = `✨ распознано: ${changes.join(' · ')}${cleaned && cleaned !== text ? ` ➔ в задании: «${cleaned}»` : ''}`;
+        hintEl.textContent = `распознано: ${changes.join(' · ')}${cleaned && cleaned !== text ? ` ➔ в задании: «${cleaned}»` : ''}`;
         hintEl.style.display = 'block';
       } else {
         hintEl.style.display = 'none';
@@ -2122,7 +2314,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function load() {
       const th = readRaw('ep_theme'); if (VALID_THEMES.includes(th)) state.theme = th;
       const lq = readRaw('ep_liquid'); if (lq !== null) state.liquid = lq === 'true';
-      state.sixDay = readRaw('ep_sixday') === 'true';
       const st = readRaw('ep_start'); if (VALID_TABS.includes(st)) state.start = st;
       const pr = readRaw('ep_period'); if (VALID_PERIODS.includes(pr)) state.period = pr;
       state.work = clamp(toInt(readRaw('ep_work'), 25), 1, 180);
@@ -2140,7 +2331,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         done !== null ? Math.max(0, toInt(done, 0)) : state.archive.length,
         state.archive.length
       );
-      if (!state.sixDay && state.curDay === 6) state.curDay = 1;
+      state.notif = readRaw('ep_notif') === 'true';
+      state.welcomeShown = readRaw('ep_welcomescreen') !== 'false';
       updateDaysConfig();
 
     }
@@ -2320,7 +2512,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       const row = $('weekPills');
       row.innerHTML = '';
-      for (let d = 1; d <= getVisibleDayCount(); d++) {
+      for (let d = 1; d <= 6; d++) {
         const cnt = state.tasks.filter(t => t.day === String(d)).length;
         const div = document.createElement('div');
         div.className = 'day-pill' + (state.curDay === d ? ' active' : '');
@@ -2422,37 +2614,21 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       for (const id of ['schedDay', 'addDay', 'editDay']) {
         const select = $(id);
         const selected = select.value;
-        const keepSaturday = state.sixDay || (id === 'editDay' && selected === '6');
+        // суббота всегда доступна
         let saturday = select.querySelector('option[value="6"]');
-        if (keepSaturday && !saturday) {
+        if (!saturday) {
           saturday = document.createElement('option');
           saturday.value = '6';
           saturday.textContent = DAYS[6];
           select.appendChild(saturday);
-        } else if (!keepSaturday && saturday) {
-          saturday.remove();
         }
-        if (selected === '6' && !keepSaturday) select.value = id === 'schedDay' ? '1' : '';
       }
-      if ($('setSixDay')) $('setSixDay').checked = state.sixDay;
-    }
-
-    function toggleSixDay(enabled) {
-      state.sixDay = Boolean(enabled);
-      if (!state.schedule[6]) state.schedule[6] = [];
-      if (!state.sixDay && state.curDay === 6) state.curDay = 1;
-      updateDaysConfig();
-      save();
-      renderAll();
-      loadSchedDay();
-      fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-      showToast(state.sixDay ? 'суббота добавлена в график' : 'суббота скрыта');
     }
 
     function renderSchedule() {
       const grid = $('schedGrid');
       grid.innerHTML = '';
-      for (let d = 1; d <= getVisibleDayCount(); d++) {
+      for (let d = 1; d <= 6; d++) {
         const les = state.schedule[d] || [];
         const card = document.createElement('div');
         card.className = 'glass';
@@ -2498,27 +2674,38 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         return;
       }
       const lessons = state.schedule[day] || [];
-      let opts = lessons.length ? [...lessons] : ['самостоятельно'];
-      if (current && current !== 'другое' && !opts.includes(current)) opts = [current, ...opts];
-      opts.push('другое');
+      let opts = lessons.length ? [...lessons] : [];
+      
+      if (current && current !== 'самостоятельно' && !opts.includes(current)) {
+        opts.push(current);
+      }
+      opts.push('самостоятельно');
+
       select.innerHTML = '';
       for (const v of opts) {
         const o = document.createElement('option');
-        o.value = v; o.textContent = v;
+        o.value = v;
+        o.textContent = v === 'самостоятельно' ? 'самостоятельно (свой предмет)' : v;
         select.appendChild(o);
       }
       select.disabled = false;
-      select.value = current && opts.includes(current) ? current : opts[0];
+      
+      // Если расписание на день пустое, сразу выбираем «самостоятельно»
+      const defaultVal = current || (lessons.length ? opts[0] : 'самостоятельно');
+      select.value = opts.includes(defaultVal) ? defaultVal : 'самостоятельно';
       toggleOther(select, other);
     }
     function toggleOther(select, other) {
-      const on = select.value === 'другое';
+      const on = select.value === 'самостоятельно';
       other.style.display = on ? 'block' : 'none';
-      if (on) other.focus();
+      other.placeholder = 'название предмета или проекта';
+      if (on && document.activeElement === select) other.focus();
     }
     function resolveSubj(select, other) {
       if (select.disabled) return '';
-      if (select.value === 'другое') return other.value.trim().slice(0, 60);
+      if (select.value === 'самостоятельно') {
+        return other.value.trim().slice(0, 60) || 'самостоятельно';
+      }
       return select.value;
     }
 
@@ -2749,10 +2936,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
     function closeEditModal() {
       hideModal($('editModal'));
-      if (!state.sixDay) {
-        $('editDay').value = '';
-        updateDaysConfig();
-      }
     }
 
     function saveEditTask(e) {
@@ -2760,8 +2943,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const idx = state.tasks.findIndex(x => x.id === $('editId').value);
       if (idx === -1) { closeEditModal(); renderAll(); showToast('задача не найдена', '!'); return; }
       const day = $('editDay').value;
-      const keepHiddenSaturday = day === '6' && state.tasks[idx].day === '6';
-      if (!isDayEnabled(day) && !keepHiddenSaturday) { showToast('выберите день недели', '!'); return; }
+      if (!isDayEnabled(day)) { showToast('выберите день недели', '!'); return; }
       const subj = resolveSubj($('editSubj'), $('editSubjOther'));
       if (!subj) { showToast('укажите предмет', '!'); return; }
       const text = $('editText').value.trim();
@@ -2887,11 +3069,23 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if ($('timerView').classList.contains('mini')) expandTimer();
       if (tState.minimized) expandTimer();
       if (tState.phase === 'work') {
+        sendNotification('время работы истекло! 🔔', {
+          body: tState.subj ? `отличная работа над «${tState.subj}»! пора размяться.` : 'отличная концентрация! пора на перерыв.',
+          tag: 'timer-work-end'
+        });
         showPhaseModal('время работы истекло!', 'отличная работа! перейдём к отдыху или задача готова?', 'work');
       } else if (!tState.id) {
+        sendNotification('разминка завершена! ✨', {
+          body: 'отдых окончен, можно возвращаться к делам.',
+          tag: 'timer-break-end'
+        });
         closeTimerView();
         showToast('разминка завершена');
       } else {
+        sendNotification('перерыв завершён! ⚡', {
+          body: 'силы восстановлены. готовы продолжить учебу?',
+          tag: 'timer-break-end'
+        });
         showPhaseModal('отдых завершён!', 'вы восстановили силы. готовы продолжить?', 'break');
       }
     }
@@ -2955,7 +3149,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       timerDigitsHidden = !timerDigitsHidden;
       const btn = $('btnHideTimerDigits');
       if (btn) {
-        btn.textContent = timerDigitsHidden ? '👁 показать' : '👁 скрыть';
+        btn.textContent = timerDigitsHidden ? 'показать' : 'скрыть';
       }
       updateTimerUI();
     }
@@ -3131,7 +3325,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       breakStepTotalMs = 0;
       breakChillMode = false;
       timerDigitsHidden = false;
-      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = '👁 скрыть';
+      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = 'скрыть';
       tState = { 
         id, 
         subj: t.subj || '', 
@@ -3227,7 +3421,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.minimized = false;
       tState.id = null;
       timerDigitsHidden = false;
-      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = '👁 скрыть';
+      if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = 'скрыть';
       save();
       const v = $('timerView');
       v.classList.remove('active');
@@ -3317,7 +3511,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const cur = breakPlan[breakStepIdx];
       if (!cur) return;
       $('breakStepBadge').textContent = `шаг ${breakStepIdx + 1} из ${breakPlan.length}`;
-      $('stepIcon').textContent = cur.icon;
       $('stepTitle').textContent = cur.title;
       $('stepDesc').textContent = cur.desc;
       const s = Math.ceil(breakStepLeftMs / 1000);
@@ -3346,15 +3539,67 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function fillSettings() {
       $('setTheme').value = state.theme;
       $('setLiquid').checked = state.liquid;
-      $('setSixDay').checked = state.sixDay;
       $('setStart').value = state.start;
+      if ($('setNotif')) $('setNotif').checked = state.notif;
+      if ($('setShowWelcome')) $('setShowWelcome').checked = state.welcomeShown;
       setDisplay('btnUndoImport', !!importBackup);
     }
     function openSettings() {
       fillSettings();
       showModal($('setModal'), $('setTheme'));
     }
-    function closeSettings() { hideModal($('setModal')); }
+    function closeSettings() {
+      hideModal($('setModal'));
+      restoreSettingsFooter();
+    }
+
+    let setNoticeTimer = null;
+    function showSettingsNotice(msg, icon = '', duration = 4500) {
+      const footer = $('setModalFooter');
+      const msgEl = $('setNoticeMsg');
+      const iconEl = $('setNoticeIcon');
+      if (!footer || !msgEl) return;
+
+      msgEl.textContent = msg;
+      if (icon) {
+        iconEl.textContent = icon;
+        iconEl.style.display = 'inline';
+      } else {
+        iconEl.style.display = 'none';
+      }
+
+      footer.classList.remove('is-danger', 'is-success');
+      const low = msg.toLowerCase();
+      const isErr = icon === '!' || low.includes('ошибка') || low.includes('не поддерживается') || low.includes('введите email');
+      const isOk = low.includes('успешн') || icon === '☁️' || icon === '🔔';
+
+      if (isErr) {
+        footer.classList.add('is-danger');
+        footer.querySelector('.settings-pill-notice').style.color = 'var(--danger)';
+      } else if (isOk) {
+        footer.classList.add('is-success');
+        footer.querySelector('.settings-pill-notice').style.color = 'var(--success)';
+      } else {
+        footer.querySelector('.settings-pill-notice').style.color = 'var(--text)';
+      }
+
+      footer.classList.add('is-notifying');
+      clearTimeout(setNoticeTimer);
+      setNoticeTimer = setTimeout(restoreSettingsFooter, duration);
+    }
+
+    function restoreSettingsFooter() {
+      const footer = $('setModalFooter');
+      if (footer) {
+        footer.classList.remove('is-notifying', 'is-danger', 'is-success');
+      }
+    }
+
+    function toggleShowWelcome(en) {
+      state.welcomeShown = en;
+      save();
+      showToast(en ? 'приветствие будет показываться при каждом запуске' : 'приветствие больше не будет показываться');
+    }
 
     function changeTheme(th) {
       if (!VALID_THEMES.includes(th)) return;
@@ -3381,7 +3626,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function exportJSON() {
       const data = {
         app: 'eduplan', version: DATA_VERSION, exportedAt: new Date().toISOString(),
-        theme: state.theme, liquid: state.liquid, sixDay: state.sixDay, start: state.start,
+        theme: state.theme, liquid: state.liquid, start: state.start,
         work: state.work, rest: state.rest,
         doneTotal: state.doneTotal,
         focus: state.focus, schedule: state.schedule,
@@ -3410,7 +3655,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if ('focus' in d) state.focus = normalizeFocus(d.focus);
       if (VALID_THEMES.includes(d.theme)) state.theme = d.theme;
       if (typeof d.liquid === 'boolean') state.liquid = d.liquid;
-      if (typeof d.sixDay === 'boolean') state.sixDay = d.sixDay;
       if (VALID_TABS.includes(d.start)) state.start = d.start;
       state.work = clamp(toInt(d.work, state.work), 1, 180);
       state.rest = clamp(toInt(d.rest, state.rest), 1, 60);
@@ -3862,14 +4106,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       let resolvedStart = start;
       if (resolvedStart === 'auto' || !VALID_TABS.includes(resolvedStart)) {
         const hr = new Date().getHours();
-        resolvedStart = hr < 14 ? 'overview' : 'tasks';
+        // Начало уроков в 8:00, конец в 13:15
+        resolvedStart = hr < 8 ? 'overview' :      // утро, до уроков — обзор дня
+                        hr < 13 ? 'schedule' :      // уроки — расписание
+                        'tasks';                    // после уроков — домашка
       }
       tab(resolvedStart, navBtn(resolvedStart));
 
       const overdueCount = state.tasks.filter(isOverdue).length;
       if (overdueCount > 0) {
         setTimeout(() => {
-          showToast(`внимание: в плане есть просроченные задания (${overdueCount})`, '⚠️');
+          showToast(`внимание: в плане есть просроченные задания (${overdueCount})`);
         }, 1200);
       }
 
@@ -3878,15 +4125,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
       checkUser();
 
-      // Окно приветствия — показываем строго один раз
-      if (!localStorage.getItem('ep_onboarded')) {
+      // Окно приветствия — показываем если включено в настройках
+      if (state.welcomeShown) {
         const m = $('welcomeModal');
         if (m) m.classList.add('active');
       }
     }
 
     function closeWelcomeModal() {
-      localStorage.setItem('ep_onboarded', '1');
       const m = $('welcomeModal');
       if (m) m.classList.remove('active');
     }
@@ -3895,44 +4141,75 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   </script>
 
   <!-- ОКНО ПРИВЕТСТВИЯ -->
-  <div class="modal-overlay" id="welcomeModal" style="z-index: 200; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);">
-    <div class="glass modal-box" style="background: var(--card-solid, #161b2e); border: 1px solid var(--border); max-width: 540px; max-height: 85vh; overflow-y: auto; padding: 24px; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+  <div class="modal-overlay" id="welcomeModal">
+    <div class="glass modal-box" style="max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 22px; position: relative;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 20px; color: var(--accent);">❖</span>
-          <span style="font-weight: 800; font-size: 17px; color: var(--text);">Добро пожаловать в eduplan</span>
+          <span style="font-size: 20px; color: var(--accent); filter: drop-shadow(0 0 6px var(--glow));">❖</span>
+          <span style="font-weight: 800; font-size: 17px; color: var(--text);">добро пожаловать в eduplan</span>
         </div>
-        <button class="icon-btn" onclick="closeWelcomeModal()" aria-label="закрыть" style="width: 32px; height: 32px; font-size: 16px;">✕</button>
+        <button class="icon-btn" onclick="closeWelcomeModal()" aria-label="закрыть" style="width: 32px; height: 32px; font-size: 15px;">✕</button>
       </div>
 
-      <div style="font-size: 13px; line-height: 1.6; color: var(--text); display: flex; flex-direction: column; gap: 14px;">
-        <div style="padding: 10px 12px; background: rgba(142,97,255,0.08); border-radius: 10px; border: 1px solid rgba(142,97,255,0.15);">
-          <b style="color: var(--accent);">📅 Школьный график</b><br>
-          Заполняйте уроки по дням недели или импортируйте расписание из .xls / .xlsx одним нажатием.
+      <div style="font-size: 12.5px; line-height: 1.5; color: var(--text); display: flex; flex-direction: column; gap: 10px;">
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">📅</span>
+          <div>
+            <b style="color: var(--accent);">школьный график</b><br>
+            <span style="color: var(--muted);">заполняйте уроки вручную или импортируйте расписание из .xls в один клик. Умная стартовая страница переключается по времени: до уроков — обзор, во время — расписание, после — домашка.</span>
+          </div>
         </div>
-        <div style="padding: 10px 12px; background: rgba(6,214,160,0.08); border-radius: 10px; border: 1px solid rgba(6,214,160,0.15);">
-          <b style="color: var(--success);">✨ Умный ввод заданий</b><br>
-          Наберите «дз по русскому завтра сочинение» — система сама определит предмет, срок и сложность. Поддерживает сокращения: биол, геом, англ, инф, физра.
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">✨</span>
+          <div>
+            <b style="color: var(--success);">умный ввод заданий</b><br>
+            <span style="color: var(--muted);">вставьте «дз по русскому завтра сочинение» — система сама поймёт предмет, дедлайн и сложность. Распознаёт сокращения: биол, геом, англ, инф, физ.</span>
+          </div>
         </div>
-        <div style="padding: 10px 12px; background: rgba(255,174,0,0.08); border-radius: 10px; border: 1px solid rgba(255,174,0,0.15);">
-          <b style="color: #ffaa00;">⚡ План работы и умная сортировка</b><br>
-          Расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте задачи и выполняйте встроенные физкультминутки.
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">⚡</span>
+          <div>
+            <b style="color: var(--warning);">план и умная сортировка</b><br>
+            <span style="color: var(--muted);">расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте по категориям и сортируйте по дате. Архив выполненных заданий не мешает.</span>
+          </div>
         </div>
-        <div style="padding: 10px 12px; background: rgba(255,107,129,0.08); border-radius: 10px; border: 1px solid rgba(255,107,129,0.15);">
-          <b style="color: #ff6b81;">🧠 Умная разминка</b><br>
-          После каждой задачи — персональный набор упражнений: для письменных предметов — кисти и шея, для чтения — глаза и движение.
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🧠</span>
+          <div>
+            <b style="color: var(--info);">умная разминка</b><br>
+            <span style="color: var(--muted);">персональные упражнения после работы: кисти для письма, глаза и осанка для чтения. Автоматически подбираются под тип предмета.</span>
+          </div>
         </div>
-        <div style="padding: 10px 12px; background: rgba(142,97,255,0.08); border-radius: 10px; border: 1px solid rgba(142,97,255,0.15);">
-          <b style="color: var(--accent);">🎯 Фокус-таймер и Dynamic Island</b><br>
-          Запускайте таймер под задачу; сверните в капсулу сверху — продолжайте работать. Кнопка 👁 скрывает отсчёт, чтобы не отвлекать.
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🎯</span>
+          <div>
+            <b style="color: var(--accent);">фокус-таймер и Dynamic Island</b><br>
+            <span style="color: var(--muted);">сворачивайте таймер в верхнюю капсулу eduplan, скрывайте секунды кнопкой «скрыть», получайте системные пуши. Кнопка «начать следующее» переключает на следующую задачу.</span>
+          </div>
         </div>
-        <div style="padding: 10px 12px; background: rgba(100,149,237,0.08); border-radius: 10px; border: 1px solid rgba(100,149,237,0.15);">
-          <b style="color: #6495ed;">🔧 Настройки (≡ справа внизу)</b><br>
-          Тема Liquid Glass, 6-дневная неделя, облачная синхронизация Supabase, экспорт/импорт данных.
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🎨</span>
+          <div>
+            <b style="color: #a78bfa;">5 тем Liquid Glass</b><br>
+            <span style="color: var(--muted);">выберите свой стиль: космос, океан, закат, лес, снег. Каждая тема — с уникальными цветами и эффектами свечения.</span>
+          </div>
+        </div>
+
+        <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
+          <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">☁️</span>
+          <div>
+            <b style="color: #6495ed;">синхронизация и настройки</b><br>
+            <span style="color: var(--muted);">облачный бэкап через Supabase, экспорт/импорт данных. Настройки — кнопка ≡ справа внизу.</span>
+          </div>
         </div>
       </div>
 
-      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 20px;">Понятно, начать!</button>
+      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 18px;">понятно, начать работу</button>
     </div>
   </div>
 
