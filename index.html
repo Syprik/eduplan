@@ -705,6 +705,12 @@
     .dock-settings-btn:hover { transform: translateY(-2px) scale(1.04); }
     .dock-settings-btn:active { transform: scale(0.93); }
     .bottom-dock .nav-btn { flex: 1 1 0; min-width: 0; }
+        @media (max-width: 385px) {
+      .bottom-dock { width: calc(100% - 16px); gap: 6px; }
+      nav.bottom-nav { height: 54px; padding: 0 4px; }
+      .dock-settings-btn { width: 54px; height: 54px; flex: 0 0 54px; font-size: 20px; }
+      .nav-btn { padding: 5px 2px; font-size: 10px; letter-spacing: -0.2px; }
+    }
     @media (max-width: 400px) {
       .bottom-dock { gap: 6px; }
       .bottom-dock .nav-btn { padding: 6px 4px; font-size: 10.5px; }
