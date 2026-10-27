@@ -31,7 +31,7 @@
       --border: rgba(255, 255, 255, 0.22);
       --glass-highlight: rgba(255, 255, 255, 0.28);
       --glass-rim: rgba(255, 255, 255, 0.08);
-      --glass-blur: 14px;
+      --glass-blur: 3px;
       --glass-saturate: 180%;
       --accent: #8e61ff;
       --grad: linear-gradient(135deg, #8e61ff 0%, #5b36f5 100%);
@@ -55,7 +55,7 @@
       --seg-bg: rgba(0, 0, 0, 0.25);
       --chip-bg: rgba(255, 255, 255, 0.05);
       --day-bg: rgba(255, 255, 255, 0.04);
-      --overlay: rgba(0, 0, 0, 0.9);
+      --overlay: rgba(5, 7, 16, 0.15);
     }
     [data-theme="light"] {
       --bg: #e2e8f0;
@@ -96,6 +96,7 @@
       --glow: rgba(213, 0, 249, 0.4);
       --mesh-2: #8e2de2;
       --mesh-4: #e056fd;
+      --overlay: rgba(17, 5, 33, 0.08);
     }
     [data-theme="emerald"] {
       --bg: #03140f;
@@ -110,6 +111,7 @@
       --glow: rgba(0, 230, 153, 0.4);
       --mesh-2: #0f9b6c;
       --mesh-4: #5eead4;
+      --overlay: rgba(3, 20, 15, 0.15);
     }
     [data-theme="sunset"] {
       --bg: #18090b;
@@ -124,6 +126,7 @@
       --glow: rgba(255, 87, 87, 0.4);
       --mesh-2: #ff416c;
       --mesh-4: #ffb56b;
+      --overlay: rgba(24, 9, 11, 0.08);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -205,7 +208,7 @@
       border-radius: 12px;
       padding: 12px 14px;
       box-shadow: inset 0 1.5px 2px var(--glass-highlight), inset 0 -1px 2px var(--glass-rim);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .glass-card:hover { transform: translateY(-2px); box-shadow: inset 0 1.5px 2px var(--glass-highlight), inset 0 -1px 2px var(--glass-rim), 0 8px 20px rgba(0,0,0,0.25); }
 
@@ -236,13 +239,13 @@
       padding: 8px 22px;
       border-radius: 999px;
       background: var(--card);
-      backdrop-filter: blur(25px) saturate(190%);
-      -webkit-backdrop-filter: blur(25px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      border: 1px solid var(--border);
       overflow: hidden;
       will-change: width, height, transform;
       box-shadow:
-        inset 0 1.5px 2px rgba(255, 255, 255, 0.12),
+        inset 0 1.5px 2px var(--glass-highlight),
         inset 0 -1px 2px var(--glass-rim),
         0 10px 28px -6px rgba(0, 0, 0, 0.35);
       transition: box-shadow 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
@@ -316,7 +319,7 @@
       padding: 0;
       line-height: 0;
       flex-shrink: 0;
-      transition: background 0.18s, transform 0.18s;
+      transition: background 0.25s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .island-btn svg {
       display: block;
@@ -451,12 +454,19 @@
 
     .view-section.active {
       display: block;
-      animation: viewFade 0.18s ease-out;
+      animation: viewEnter 0.55s cubic-bezier(0.05, 0.7, 0.1, 1) both;
+      will-change: transform, opacity;
     }
 
-    @keyframes viewFade {
-      from { opacity: 0.01; }
-      to { opacity: 1; }
+    @keyframes viewEnter {
+      0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.99);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     .glass, .glass-card {
@@ -504,7 +514,7 @@
       backdrop-filter: blur(12px) saturate(160%);
       -webkit-backdrop-filter: blur(12px) saturate(160%);
       box-shadow: inset 0 1px 1px var(--glass-highlight);
-      transition: all 0.2s; color: var(--text);
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1); color: var(--text);
     }
     .day-pill.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 4px 14px var(--glow); transform: translateY(-2px); }
 
@@ -516,7 +526,7 @@
       backdrop-filter: blur(12px) saturate(160%);
       -webkit-backdrop-filter: blur(12px) saturate(160%);
       box-shadow: inset 0 1px 1px var(--glass-highlight);
-      font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      font-size: 14px; outline: none;       transition: border-color 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .input:focus { border-color: var(--accent); box-shadow: 0 0 12px var(--glow); }
     .input:disabled { opacity: 0.6; }
@@ -556,7 +566,7 @@
       backdrop-filter: blur(12px) saturate(160%);
       -webkit-backdrop-filter: blur(12px) saturate(160%);
       box-shadow: inset 0 1px 1px var(--glass-highlight);
-      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .chip.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 3px 12px var(--glow); }
     /* Действие, а не фильтр: отличается по виду, чтобы не путать с чипами выбора. */
@@ -652,7 +662,7 @@
       -webkit-backdrop-filter: blur(12px) saturate(160%);
       box-shadow: inset 0 1px 1px var(--glass-highlight);
       color: var(--text); padding: 6px 10px; border-radius: 8px; font-size: 12px;
-      font-weight: 700; cursor: pointer; transition: all 0.2s;
+      font-weight: 700; cursor: pointer; transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .btn-act:hover { background: var(--ctrl-hover); }
     .btn-act.btn-go { background: var(--grad); color: #fff; border: none; }
@@ -690,7 +700,7 @@
         inset 0 1.5px 2.5px var(--glass-highlight),
         inset 0 -1px 2px var(--glass-rim),
         0 16px 38px rgba(0, 0, 0, 0.42);
-      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s;
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .dock-settings-btn:hover { transform: translateY(-2px) scale(1.04); }
     .dock-settings-btn:active { transform: scale(0.93); }
@@ -707,7 +717,7 @@
       background: none; border: none; color: var(--muted); cursor: pointer;
       display: flex; flex-direction: column; align-items: center; gap: 2px;
       padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
-      transition: all 0.2s;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
     .nav-btn.active { background: var(--grad); color: #fff; box-shadow: 0 4px 14px var(--glow); }
 
@@ -761,6 +771,7 @@
     .timer-view.mini .timer-mini-hide { display: none !important; }
     .timer-view.mini .timer-mini-show { display: flex !important; }
     .timer-mini-show { display: none; }
+
     .mini-row { display: flex; align-items: center; gap: 10px; }
     .mini-time {
       font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
@@ -826,6 +837,18 @@
       border-color: var(--accent);
       box-shadow: inset 0 1px 2px var(--glass-highlight), 0 0 18px var(--glow);
     }
+    @media (max-width: 400px) {
+      .settings-brand-pill.is-notifying {
+        padding: 10px 14px;
+      }
+      .settings-pill-notice {
+        left: 12px;
+        right: 12px;
+        font-size: 11px;
+        justify-content: flex-start;
+        text-align: left;
+      }
+    }
     .settings-brand-pill.is-danger {
       border-color: var(--danger) !important;
       box-shadow: inset 0 1px 2px var(--glass-highlight), 0 0 18px rgba(255, 77, 109, 0.35) !important;
@@ -862,8 +885,8 @@
     }
     .settings-pill-notice {
       position: absolute;
-      left: 18px;
-      right: 18px;
+      left: 16px;
+      right: 16px;
       opacity: 0;
       transform: translateY(12px) scale(0.94);
       filter: blur(4px);
@@ -874,10 +897,10 @@
       color: var(--text);
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 7px;
-      text-align: center;
-      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      justify-content: flex-start;
+      gap: 8px;
+      text-align: left;
+      transition: all 0.5s cubic-bezier(0.05, 0.7, 0.1, 1);
     }
     .settings-notice-icon {
       font-size: 13px;
@@ -901,15 +924,92 @@
       pointer-events: auto;
     }
 
-    @media (max-width: 400px) {
-      .settings-brand-pill.is-notifying {
-        padding: 10px 16px;
-      }
-      .settings-pill-notice {
-        left: 12px;
-        right: 12px;
-        font-size: 11px;
-      }
+    /* Стеклянный тултип-указатель */
+    .tour-tooltip {
+      position: fixed;
+      z-index: 150;
+      max-width: 260px;
+      background: var(--card-solid);
+      background: linear-gradient(135deg, rgba(32, 38, 66, 0.92) 0%, rgba(16, 20, 38, 0.95) 100%);
+      border: 1px solid var(--accent);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.4;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px var(--glow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      animation: tooltipFloat 2.8s ease-in-out infinite alternate;
+      pointer-events: auto;
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+
+    @keyframes tooltipFloat {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-3px); }
+    }
+
+    /* Стрелочка-указатель (хвостик) */
+    .tour-tooltip::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border: 7px solid transparent;
+    }
+    .tour-tooltip.arrow-bottom::after {
+      top: 100%;
+      left: var(--arrow-x, 50%);
+      transform: translateX(-50%);
+      border-top-color: var(--accent);
+    }
+    .tour-tooltip.arrow-top::after {
+      bottom: 100%;
+      left: var(--arrow-x, 50%);
+      transform: translateX(-50%);
+      border-bottom-color: var(--accent);
+    }
+
+    .tour-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 11.5px;
+    }
+    .tour-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0 4px;
+    }
+    .tour-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .tour-btn {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--grad);
+      color: #fff;
+      border: none;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tour-step-badge {
+      font-size: 10px;
+      opacity: 0.7;
+      font-weight: 700;
+      margin-left: 6px;
     }
   </style>
 </head>
@@ -930,7 +1030,7 @@
       </span>
       <!-- Dynamic Island: свёрнутый таймер -->
       <span class="brand-content brand-timer" id="brandTimer" style="display:none; cursor:pointer;" onclick="toggleIslandExpand(event)">
-        <span id="islandSubj" style="font-weight:800; font-size:13px; color:var(--accent);">Алгебра</span>
+        <span id="islandSubj" style="font-weight:800; font-size:13px; color:var(--accent);">алгебра</span>
         <span style="opacity:0.5; margin:0 4px;">•</span>
         <span id="islandDigits" style="font-weight:800; font-size:13px; font-variant-numeric:tabular-nums;">25:00</span>
         <span class="brand-timer-controls" id="islandControls">
@@ -1060,7 +1160,7 @@
           <div class="form-group">
             <label class="label" for="addText">содержание задания:</label>
             <textarea id="addText" class="input" rows="3" maxlength="500" placeholder="параграф, номера упражнений..." required></textarea>
-            <div id="smartParseHint" style="font-size: 11.5px; color: var(--accent); margin-top: 4px; display: none; transition: opacity 0.2s;"></div>
+            <div id="smartParseHint" style="font-size: 11.5px; color: var(--accent); margin-top: 4px; display: none; transition: opacity 0.35s ease;"></div>
           </div>
           <div class="form-group">
             <label class="label" for="addDue">срок сдачи:</label>
@@ -1155,6 +1255,13 @@
         </div>
         <input type="checkbox" id="setShowWelcome" onchange="toggleShowWelcome(this.checked)" aria-labelledby="setShowWelcome" style="width:20px;height:20px;accent-color:var(--accent);">
       </div>
+      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;font-size:13px;">автоархивация старых задач</div>
+          <div style="font-size:11px;color:var(--muted);">переносить в архив задачи за прошлые дни</div>
+        </div>
+        <input type="checkbox" id="setAutoArchive" onchange="toggleAutoArchive(this.checked)" style="width:20px;height:20px;accent-color:var(--accent);">
+      </div>
       <div class="form-group">
         <label class="label" for="setTheme">тема liquid glass:</label>
         <select id="setTheme" class="input" onchange="changeTheme(this.value)">
@@ -1189,17 +1296,17 @@
         </div>
 
         <!-- форма входа / регистрации -->
-        <div id="auth-form">
+        <div id="auth-guest-ui">
           <input type="email" id="auth-email" class="input" placeholder="ваш email" style="margin-bottom: 8px;">
           <input type="password" id="auth-password" class="input" placeholder="пароль" style="margin-bottom: 8px;">
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-act btn-go" style="flex: 1; justify-content: center;" onclick="handleSignIn()">войти</button>
             <button type="button" class="btn-act" style="flex: 1; justify-content: center;" onclick="handleSignUp()">регистрация</button>
-    </div>
-  </div>
+          </div>
+        </div>
 
         <!-- состояние: пользователь залогинен -->
-        <div id="user-logged-in" style="display: none; text-align: center;">
+        <div id="auth-user-ui" style="display: none; text-align: center;">
           <div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">вы вошли как:</div>
           <div id="user-email-display" style="font-weight: 800; font-size: 13px; color: var(--accent); margin-bottom: 10px; word-break: break-all;"></div>
           <button type="button" class="btn-act btn-danger" style="width: 100%; justify-content: center;" onclick="handleSignOut()">выйти из аккаунта</button>
@@ -1207,6 +1314,7 @@
       </div>
 
       <button class="btn-act btn-danger" style="width:100%; margin-top:12px;" onclick="resetAll()">сбросить все данные</button>
+      <button type="button" class="btn-act" style="width:100%; margin-top:10px;" onclick="closeSettings(); startOnboardingTour(true);">повторить интерактивное обучение</button>
       
       <!-- Анимированная капсула настроек -->
       <div class="settings-brand-pill" id="setModalFooter">
@@ -1361,7 +1469,7 @@
           <button class="btn-main" id="btnGoBreak" onclick="startBreak()">перейти к отдыху</button>
           <button class="btn-main btn-success" onclick="finishTask()">завершить задачу</button>
           <button class="btn-act" id="btnAdd5" onclick="add5Min()">+5 мин продолжить</button>
-          <button class="btn-act" id="btnBackWork" onclick="startWorkAgain()" style="display:none;">ещё один рабочий цикл</button>
+          <button class="btn-act" id="btnBackWork" style="display:none;">ещё один рабочий цикл</button>
           <button class="btn-act" id="btnAbort" onclick="abortTimer()">выйти, задача останется в плане</button>
         </div>
       </div>
@@ -1381,9 +1489,17 @@
       }
     }) : null;
     if (sbClient) {
-      console.log("Supabase успешно подключен!", sbClient);
+      console.log("supabase успешно подключен!", sbClient);
     } else {
-      console.error("Не удалось инициализировать Supabase: библиотека не загрузилась");
+      console.error("не удалось инициализировать supabase: библиотека не загрузилась");
+    }
+
+    // ---------- Supabase Auth State Change ----------
+    if (sbClient) {
+      sbClient.auth.onAuthStateChange((event, session) => {
+        console.log('auth state change:', event, session ? 'logged in' : 'logged out');
+        checkUser();
+      });
     }
 
     // ---------- Supabase Auth ----------
@@ -1395,11 +1511,11 @@
       
       const emailLower = email.toLowerCase();
       if (emailLower.includes('@mail.ru') || emailLower.includes('@bk.ru') || emailLower.includes('@inbox.ru')) {
-        showToast('mail.ru временно не поддерживается. нужен gmail или outlook', '!');
+        showToast('почты mail не поддерживаются. нужен gmail или outlook', '!');
         return;
       }
       
-      if (!email.includes('@gmail.com') && !email.includes('@outlook.com') && !email.includes('@yahoo.com')) {
+      if (!emailLower.includes('@gmail.com') && !emailLower.includes('@outlook.com') && !emailLower.includes('@yahoo.com')) {
         showToast('нужен gmail, outlook или yahoo', '!');
         return;
       }
@@ -1447,26 +1563,26 @@
           session = data.session;
         }
       } catch (e) {
-        console.log("Локальная сессия проверяется...");
+        console.log("локальная сессия проверяется...");
       }
 
       const currentUser = session ? session.user : null;
 
-      const formDiv = $('auth-form');
-      const userDiv = $('user-logged-in');
+      const guestUI = $('auth-guest-ui');
+      const userUI = $('auth-user-ui');
       const emailSpan = $('user-email-display');
 
+      // Строгое разделение: виден ТОЛЬКО один блок
       if (currentUser) {
-        if (formDiv) formDiv.style.display = 'none';
-        if (userDiv) userDiv.style.display = 'block';
+        if (guestUI) guestUI.style.display = 'none';
+        if (userUI) userUI.style.display = 'block';
         if (emailSpan) emailSpan.textContent = currentUser.email;
-
-        console.log("Сессия подтверждена! Текущий пользователь ID:", currentUser.id);
 
         await loadFromCloud(currentUser.id);
       } else {
-        if (formDiv) formDiv.style.display = 'block';
-        if (userDiv) userDiv.style.display = 'none';
+        if (guestUI) guestUI.style.display = 'block';
+        if (userUI) userUI.style.display = 'none';
+        if (emailSpan) emailSpan.textContent = '';
       }
     }
 
@@ -1496,6 +1612,9 @@
           if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
           if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
           if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
+          if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
+          if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen !== 'false';
+          if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
 
           try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
           try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
@@ -1513,17 +1632,13 @@
           renderAll();
           loadSchedDay();
           fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-          if (typeof renderAll === 'function') renderAll();
-          if (typeof applyAppearance === 'function') applyAppearance();
-          if (typeof loadSchedDay === 'function') loadSchedDay();
-
           if (showNotify && !_cloudSyncToastShown) {
             _cloudSyncToastShown = true;
             showToast('данные синхронизированы с облаком');
           }
         }
       } catch (err) {
-        console.error('Критическая ошибка разбора данных облака:', err);
+        console.error('критическая ошибка разбора данных облака:', err);
       }
     }
 
@@ -1537,8 +1652,8 @@
     const VALID_PRIO = ['critical', 'urgent', 'important', 'normal', 'later'];
     const VALID_COMP = ['test', 'easy', 'normal_comp', 'medium', 'hard'];
     const VALID_PERIODS = ['day', 'week', 'month', 'year', 'all'];
-    const DAYS = { 1: 'понедельник', 2: 'вторник', 3: 'среда', 4: 'четверг', 5: 'пятница', 6: 'суббота' };
-    const SHORT_DAYS = { 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт', 6: 'сб' };
+    const DAYS = { 1: 'понедельник', 2: 'вторник', 3: 'среда', 4: 'четверг', 5: 'пятница' };
+    const SHORT_DAYS = { 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт' };
     const EXERCISE_STEPS = {
   wrists: [
     { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: 25 },
@@ -1630,13 +1745,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       focus: {},               // { 'YYYY-MM-DD': миллисекунды фокуса }
       notif: false,            // системные уведомления (push)
       welcomeShown: true,      // показывать приветствие при запуске
-      schedule: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      autoArchive: true,       // автоархивация старых задач
+      schedule: { 1: [], 2: [], 3: [], 4: [], 5: [] },
       tasks: [], archive: []
     };
     const loadWarnings = [];
     function isDayEnabled(day) {
       const n = Number(day);
-      return Number.isInteger(n) && n >= 1 && n <= 6;
+      return Number.isInteger(n) && n >= 1 && n <= 5;
     }
 
     // ---------- Утилиты ----------
@@ -1651,7 +1767,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const todayDay = today.getDay() || 7; // 1 - пн ... 7 - вс
 
       const matchingDays = [];
-      for (let d = 1; d <= 6; d++) {
+      for (let d = 1; d <= 5; d++) {
         const list = state.schedule[d] || [];
         if (list.some(l => l.toLowerCase() === s || l.toLowerCase().includes(s))) {
           matchingDays.push(d);
@@ -1895,6 +2011,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       t.classList.toggle('undoable', !!undoAction);
       clearTimeout(toastTimer);
       if (tState.minimized) {
+        t.classList.remove('island', 'is-expanded');
         $('brandTimer').style.display = 'none';
         $('brandNotice').style.display = '';
       }
@@ -1977,10 +2094,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         else if (!e.shiftKey && (document.activeElement === last || !inside)) { e.preventDefault(); first.focus(); }
       }
     });
-    // Клик по затемнению закрывает модалку (кроме таймерного диалога).
-    [$('setModal'), $('editModal')].forEach(el => {
-      el.addEventListener('click', e => { if (e.target === el) hideModal(el); });
-    });
+    // Клик по затемнению закрывает модалку — убрано, закрытие только через крестик/кнопку.
+    // [$('setModal'), $('editModal'), $('welcomeModal')].forEach(el => {
+    //   if (el) el.addEventListener('click', e => { if (e.target === el) { if (el.id === 'welcomeModal') closeWelcomeModal(); else hideModal(el); } });
+    // });
 
     // ---------- Хранилище ----------
     let lastSaveWarn = 0;
@@ -2013,6 +2130,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         ep_done: String(state.doneTotal),
         ep_notif: String(state.notif),
         ep_welcomescreen: String(state.welcomeShown),
+        ep_autoarchive: String(state.autoArchive),
         ep_focus: JSON.stringify(state.focus),
         ep_sched: JSON.stringify(state.schedule),
         ep_tasks: JSON.stringify(state.tasks),
@@ -2050,9 +2168,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
                 .from('user_data')
                 .insert([{ user_id: user.id, payload: data }]);
             }
-            console.log('Данные синхронизированы с облаком Supabase');
+            console.log('данные синхронизированы с облаком Supabase');
           } catch (err) {
-            console.error('Ошибка облачной синхронизации:', err);
+            console.error('ошибка облачной синхронизации:', err);
           }
         }, 350);
       }
@@ -2155,7 +2273,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         // Ищем, есть ли найденный предмет в реальном расписании пользователя
         if (detectedSubj) {
           const sLow = detectedSubj.toLowerCase();
-          for (let d = 1; d <= 6; d++) {
+      for (let d = 1; d <= 5; d++) {
             const list = state.schedule[d] || [];
             const found = list.find(l => l.toLowerCase().includes(sLow.slice(0, 4)));
             if (found) {
@@ -2177,7 +2295,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           let year = numDateMatch[3] ? parseInt(numDateMatch[3], 10) : now.getFullYear();
           if (year < 100) year += 2000;
           const dObj = new Date(year, month - 1, day);
-          if (!isNaN(dObj.getTime())) detectedDue = getLocalToday(dObj);
+          // Проверяем, что дата реально существует (месяц и день не съехали)
+          if (dObj.getFullYear() === year && dObj.getMonth() === month - 1 && dObj.getDate() === day) {
+            // Если год не был указан явно и дата уже прошла в этом году — переносим на следующий год
+            if (!numDateMatch[3] && getLocalToday(dObj) < getLocalToday(now)) {
+              dObj.setFullYear(year + 1);
+            }
+            detectedDue = getLocalToday(dObj);
+          }
         } else if (low.includes('послезавтра')) {
           const d = new Date(now); d.setDate(now.getDate() + 2);
           detectedDue = getLocalToday(d);
@@ -2187,7 +2312,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         } else if (low.includes('сегодня')) {
           detectedDue = getLocalToday(now);
         } else {
-          const weekMap = { 'понедельник': 1, 'вторник': 2, 'сред': 3, 'четверг': 4, 'пятниц': 5, 'суббот': 6 };
+          const weekMap = { 'понедельник': 1, 'вторник': 2, 'сред': 3, 'четверг': 4, 'пятниц': 5, 'суббот': 1, 'выходны': 1 };
           for (const [kw, dayNum] of Object.entries(weekMap)) {
             if (low.includes(kw)) {
               const curDay = now.getDay() || 7;
@@ -2266,7 +2391,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function normalizeSchedule(v) {
-      const out = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      const out = { 1: [], 2: [], 3: [], 4: [], 5: [] };
       if (v && typeof v === 'object' && !Array.isArray(v)) {
         Object.keys(out).forEach(d => {
           if (Array.isArray(v[d])) {
@@ -2283,7 +2408,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   if (!text) return null;
   const rawId = typeof t.id === 'string' ? t.id : '';
   const id = /^[A-Za-z0-9_-]{1,64}$/.test(rawId) ? rawId : newId();
-  const day = ['1', '2', '3', '4', '5', '6'].includes(String(t.day)) ? String(t.day) : '';
+  const day = ['1', '2', '3', '4', '5'].includes(String(t.day)) ? String(t.day) : '';
   const subj = String(t.subj || 'самостоятельно').trim().slice(0, 60);
   const due = (typeof t.due === 'string' && t.due.trim()) ? t.due.trim() : '';
   const obj = {
@@ -2344,6 +2469,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       );
       state.notif = readRaw('ep_notif') === 'true';
       state.welcomeShown = readRaw('ep_welcomescreen') !== 'false';
+      state.autoArchive = readRaw('ep_autoarchive') !== 'false';
       updateDaysConfig();
 
     }
@@ -2456,6 +2582,33 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       if (name === 'add') prepareAddForm();
     }
+    function checkAutoArchive() {
+      if (!state.autoArchive || !state.tasks.length) return;
+      const today = getLocalToday();
+      const toArchive = [];
+      const remaining = [];
+
+      state.tasks.forEach(t => {
+        if (t.due && t.due < today) {
+          t.closedAt = t.due;
+          toArchive.push(t);
+        } else {
+          remaining.push(t);
+        }
+      });
+
+      if (toArchive.length) {
+        state.tasks = remaining;
+        state.archive.unshift(...toArchive);
+        // НЕ увеличиваем state.doneTotal — задачи ушли в архив по просрочке, а не были выполнены
+        save();
+        renderAll();
+        setTimeout(() => {
+          showToast(`отправлено в архив прошлых задач: ${toArchive.length}`);
+        }, 1000);
+      }
+    }
+
     function renderAll() { renderOverview(); renderSchedule(); renderTasks(); renderArchive(); fillSettings(); }
 
     // ---------- Фокус и статистика ----------
@@ -2523,7 +2676,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       const row = $('weekPills');
       row.innerHTML = '';
-      for (let d = 1; d <= 6; d++) {
+      for (let d = 1; d <= 5; d++) {
         const cnt = state.tasks.filter(t => t.day === String(d)).length;
         const div = document.createElement('div');
         div.className = 'day-pill' + (state.curDay === d ? ' active' : '');
@@ -2620,26 +2773,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     // ---------- Расписание ----------
-    function updateDaysConfig() {
-      if (!state.schedule[6]) state.schedule[6] = [];
-      for (const id of ['schedDay', 'addDay', 'editDay']) {
-        const select = $(id);
-        const selected = select.value;
-        // суббота всегда доступна
-        let saturday = select.querySelector('option[value="6"]');
-        if (!saturday) {
-          saturday = document.createElement('option');
-          saturday.value = '6';
-          saturday.textContent = DAYS[6];
-          select.appendChild(saturday);
-        }
-      }
-    }
+    function updateDaysConfig() {}
 
     function renderSchedule() {
       const grid = $('schedGrid');
       grid.innerHTML = '';
-      for (let d = 1; d <= 6; d++) {
+      for (let d = 1; d <= 5; d++) {
         const les = state.schedule[d] || [];
         const card = document.createElement('div');
         card.className = 'glass';
@@ -2922,12 +3061,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
       $('editId').value = t.id;
-      if (t.day === '6' && !$('editDay').querySelector('option[value="6"]')) {
-        const saturday = document.createElement('option');
-        saturday.value = '6';
-        saturday.textContent = DAYS[6];
-        $('editDay').appendChild(saturday);
-      }
       $('editDay').value = t.day;
       fillSubjects($('editSubj'), $('editSubjOther'), t.day, t.subj);
       $('editText').value = t.text;
@@ -3224,7 +3357,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.minimized = false;
       hideIsland();
       const v = $('timerView');
-      v.classList.add('active');
+      v.classList.remove('mini');
       updateTimerUI();
       const b = $('timerToggleBtn');
       if (b) b.focus();
@@ -3245,6 +3378,19 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('brandDefault').style.display = '';
       $('brandNotice').style.display = '';
       $('toast').style.borderColor = '';
+    }
+
+    // ---------- Очистка Dynamic Island при отсутствии активной задачи ----------
+    function resetDynamicIsland() {
+      const island = $('brandTimer');
+      const subj = $('islandSubj');
+      const digits = $('islandDigits');
+      // Если таймер не запущен и не свёрнут — скрываем остров и очищаем данные
+      if (!tState.minimized && !tState.running && !tState.id) {
+        if (island) island.style.display = 'none';
+        if (subj) subj.textContent = '';
+        if (digits) digits.textContent = '';
+      }
     }
 
     function updateIslandUI() {
@@ -3356,7 +3502,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       // Chromium запрещает запуск AudioContext без действия пользователя,
       // поэтому будим звук прямо в обработчике клика.
       primeAudio();
-      $('timerView').classList.add('active');
       const workMins = COMP[t.comp]?.t || state.work;
       startPhase('work', workMins * 60);
       $('timerToggleBtn').focus();
@@ -3383,7 +3528,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('timerTitle').textContent = 'разминка';
       hidePhaseModal();
       primeAudio();
-      $('timerView').classList.add('active');
       startPhase('break', getBreakDurationMinutes(comp) * 60);
       $('timerToggleBtn').focus();
     }
@@ -3450,6 +3594,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       closeTimerView();
       showToast('таймер остановлен, задача осталась в плане', 'i');
       renderAll();
+      resetDynamicIsland();
     }
 
     function finishTask() {
@@ -3458,6 +3603,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       closeTimerView();
       if (id) completeTaskById(id);
       else showToast('разминка завершена');
+      resetDynamicIsland();
     }
 
     // Экран не гаснет во время сессии (если браузер поддерживает Wake Lock).
@@ -3553,6 +3699,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('setStart').value = state.start;
       if ($('setNotif')) $('setNotif').checked = state.notif;
       if ($('setShowWelcome')) $('setShowWelcome').checked = state.welcomeShown;
+      if ($('setAutoArchive')) $('setAutoArchive').checked = state.autoArchive;
       setDisplay('btnUndoImport', !!importBackup);
     }
     function openSettings() {
@@ -3582,7 +3729,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       footer.classList.remove('is-danger', 'is-success');
       const low = msg.toLowerCase();
       const isErr = icon === '!' || low.includes('ошибка') || low.includes('не поддерживается') || low.includes('введите email');
-      const isOk = low.includes('успешн') || icon === '☁️' || icon === '🔔';
+      const isOk = low.includes('успешно') || low.includes('синхронизированы') || low.includes('сохранены') || low.includes('включены') || icon === '☁️' || icon === '🔔';
 
       if (isErr) {
         footer.classList.add('is-danger');
@@ -3610,6 +3757,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.welcomeShown = en;
       save();
       showToast(en ? 'приветствие будет показываться при каждом запуске' : 'приветствие больше не будет показываться');
+    }
+
+    function toggleAutoArchive(en) {
+      state.autoArchive = en;
+      save();
+      showToast(en ? 'автоархивация старых задач включена' : 'автоархивация выключена');
     }
 
     function changeTheme(th) {
@@ -3749,7 +3902,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function collectImportedScheduleFromGrid(grid) {
-      const out = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      const out = { 1: [], 2: [], 3: [], 4: [], 5: [] };
       if (!Array.isArray(grid) || !grid.length) return out;
 
       const rows = grid
@@ -3763,7 +3916,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const dayCols = {};
         for (let i = 0; i < header.length; i++) {
           const day = getDayIndexFromValue(header[i]);
-          if (day && day >= 1 && day <= 6) dayCols[day] = i;
+          if (day && day >= 1 && day <= 5) dayCols[day] = i;
         }
         if (Object.keys(dayCols).length) {
           for (let r = headerIdx + 1; r < rows.length; r++) {
@@ -3781,7 +3934,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
         const row = rows[rowIndex];
         if (rowIndex === headerIdx && row.filter(cell => getDayIndexFromValue(cell) !== null).length > 1) continue;
-        const foundDay = row.map(getDayIndexFromValue).find(day => day !== null && day >= 1 && day <= 6);
+        const foundDay = row.map(getDayIndexFromValue).find(day => day !== null && day >= 1 && day <= 5);
         if (!foundDay) continue;
         for (const cell of row) {
           if (getDayIndexFromValue(cell) !== null) continue;
@@ -3856,7 +4009,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
           if (!confirm('импортировать расписание из файла? это заменит текущее расписание на выбранных днях.')) return;
           const backup = JSON.parse(JSON.stringify(state));
-          state.schedule = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+          state.schedule = { 1: [], 2: [], 3: [], 4: [], 5: [] };
           for (const day of Object.keys(imported)) {
             const dayKey = String(day);
             state.schedule[dayKey] = parseLessons(imported[dayKey].join(',')).list;
@@ -3871,7 +4024,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           importBackup = backup;
           setDisplay('btnUndoImport', true);
         } catch (err) {
-          showToast('не удалось обработать Excel-файл', '!');
+          showToast('не удалось обработать excel-файл', '!');
         }
       };
       reader.readAsArrayBuffer(file);
@@ -4087,6 +4240,161 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       window.addEventListener('resize', () => { if (v.classList.contains('mini')) applyMiniPos(); });
     }
 
+        
+
+    // ---------- Онбординг-тултипы ----------
+    let tourTooltipEl = null;
+    let currentTourIndex = 0;
+
+    function removeTourTooltip() {
+      if (tourTooltipEl) {
+        tourTooltipEl.remove();
+        tourTooltipEl = null;
+      }
+    }
+
+    function dismissTour() {
+      removeTourTooltip();
+    }
+
+    function showTourTooltip(targetEl, text, title, stepNum, totalSteps, arrowPos = 'bottom', nextCallback = null) {
+      removeTourTooltip();
+      if (!targetEl) {
+        if (nextCallback) nextCallback();
+        return;
+      }
+
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+
+      const rect = targetEl.getBoundingClientRect();
+      const tip = document.createElement('div');
+      tip.className = `tour-tooltip arrow-${arrowPos}`;
+      tip.innerHTML = `
+        <div class="tour-header">
+          <span>${title} <span class="tour-step-badge">${stepNum}/${totalSteps}</span></span>
+          <button class="tour-close" onclick="dismissTour()" aria-label="закрыть">✕</button>
+        </div>
+        <div>${text}</div>
+        <div class="tour-actions">
+          <button class="tour-btn" id="tourNextBtn">${nextCallback ? 'далее ➔' : 'всё понятно ✓'}</button>
+        </div>
+      `;
+      document.body.appendChild(tip);
+      tourTooltipEl = tip;
+
+      const tipRect = tip.getBoundingClientRect();
+      let left = rect.left + rect.width / 2 - tipRect.width / 2;
+      left = Math.max(12, Math.min(window.innerWidth - tipRect.width - 12, left));
+
+      const arrowX = Math.max(16, Math.min(tipRect.width - 16, (rect.left + rect.width / 2) - left));
+      tip.style.setProperty('--arrow-x', `${arrowX}px`);
+
+      let top = 0;
+      if (arrowPos === 'bottom') {
+        top = Math.max(10, rect.top - tipRect.height - 12);
+      } else {
+        top = Math.min(window.innerHeight - tipRect.height - 10, rect.bottom + 12);
+      }
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+
+      $('tourNextBtn').onclick = () => {
+        if (nextCallback) nextCallback();
+        else dismissTour();
+      };
+    }
+
+    const TOUR_CONFIG = [
+      {
+        tab: 'overview',
+        getTarget: () => navBtn('overview'),
+        arrow: 'bottom',
+        title: '📊 Сводка дня',
+        text: 'здесь виден общий прогресс, количество открытых уроков и расписание на всю рабочую пятидневку.'
+      },
+      {
+        tab: 'add',
+        getTarget: () => $('addText'),
+        arrow: 'top',
+        title: '✨ умный ввод',
+        text: 'не нужно вручную выбирать дату и предмет: просто напиши «дз по алгебре завтра номер 42» — система всё поймёт сама.'
+      },
+      {
+        tab: 'schedule',
+        getTarget: () => document.querySelector('#view-schedule .glass[onclick*="importScheduleFileTop"]'),
+        arrow: 'top',
+        title: '📅 график и excel',
+        text: 'заполняй уроки вручную или импортируй школьное расписание прямо из файла .xls / .xlsx в один клик.'
+      },
+      {
+        tab: 'tasks',
+        getTarget: () => document.querySelector('#filterChips .chip-action'),
+        arrow: 'top',
+        title: '⚡ авто-сортировка',
+        text: 'Кнопка «по срочности» расставит задачи сама: чем ближе сдача и сложнее урок, тем выше он окажется в списке.'
+      },
+      {
+        tab: 'tasks',
+        getTarget: () => document.querySelector('[data-act="focus"]') || $('tasksList'),
+        arrow: 'top',
+        title: '🎯 фокус-сессия',
+        text: 'запускай таймер на задаче: после работы система предложит умную разминку для глаз или кистей под тип предмета.'
+      },
+      {
+        tab: 'overview',
+        getTarget: () => $('toast'),
+        arrow: 'top',
+        title: '❖ dynamic island',
+        text: 'верхняя капсула — живая. во время учебы таймер сворачивается прямо сюда, освобождая экран.'
+      },
+      {
+        tab: 'overview',
+        getTarget: () => document.querySelector('.dock-settings-btn'),
+        arrow: 'bottom',
+        title: '⚙️ настройки и облако',
+        text: 'здесь живут 5 тем liquid glass, синхронизация supabase, системные push-уведомления и автоархивация.'
+      }
+    ];
+
+    function runTourStep(index) {
+      if (index >= TOUR_CONFIG.length) {
+        dismissTour();
+        return;
+      }
+      const step = TOUR_CONFIG[index];
+      if (step.tab) {
+        tab(step.tab, navBtn(step.tab));
+      }
+
+      setTimeout(() => {
+        const el = step.getTarget();
+        if (!el) {
+          runTourStep(index + 1);
+          return;
+        }
+        const isLast = index === TOUR_CONFIG.length - 1;
+        showTourTooltip(
+          el,
+          step.text,
+          step.title,
+          index + 1,
+          TOUR_CONFIG.length,
+          step.arrow,
+          isLast ? null : () => runTourStep(index + 1)
+        );
+      }, 220);
+    }
+
+    function startOnboardingTour(force = false) {
+      let count = toInt(readRaw('ep_tour_launches'), 0);
+      if (!force && count >= 2) return;
+      if (!force) writeRaw('ep_tour_launches', String(count + 1));
+
+      setTimeout(() => {
+        runTourStep(0);
+      }, 1000);
+    }
+
     function init() {
       load();
       applyAppearance();
@@ -4124,6 +4432,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
       tab(resolvedStart, navBtn(resolvedStart));
 
+      checkAutoArchive();
+
       const overdueCount = state.tasks.filter(isOverdue).length;
       if (overdueCount > 0) {
         setTimeout(() => {
@@ -4136,16 +4446,22 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
       checkUser();
 
+      // Очистка Dynamic Island при отсутствии активной задачи
+      resetDynamicIsland();
+
       // Окно приветствия — показываем если включено в настройках
       if (state.welcomeShown) {
         const m = $('welcomeModal');
-        if (m) m.classList.add('active');
+        if (m) { m.classList.add('active'); m.removeAttribute('hidden'); }
+      } else {
+        startOnboardingTour();
       }
     }
 
     function closeWelcomeModal() {
       const m = $('welcomeModal');
-      if (m) m.classList.remove('active');
+      if (m) { m.classList.remove('active'); m.setAttribute('hidden', ''); }
+      startOnboardingTour();
     }
 
     document.addEventListener('DOMContentLoaded', init);
@@ -4153,21 +4469,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
   <!-- ОКНО ПРИВЕТСТВИЯ -->
   <div class="modal-overlay" id="welcomeModal">
-    <div class="glass modal-box" style="max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 22px; position: relative;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div class="glass modal-box" style="max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 22px; position: relative; display: flex; flex-direction: column;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; width: 100%;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 20px; color: var(--accent); filter: drop-shadow(0 0 6px var(--glow));">❖</span>
           <span style="font-weight: 800; font-size: 17px; color: var(--text);">добро пожаловать в eduplan</span>
         </div>
-        <button class="icon-btn" onclick="closeWelcomeModal()" aria-label="закрыть" style="width: 32px; height: 32px; font-size: 15px;">✕</button>
       </div>
 
-      <div style="font-size: 12.5px; line-height: 1.5; color: var(--text); display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 12.5px; line-height: 1.5; color: var(--text); display: flex; flex-direction: column; gap: 10px; width: 100%;">
         <div class="glass-card" style="display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px;">
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">📅</span>
           <div>
             <b style="color: var(--accent);">школьный график</b><br>
-            <span style="color: var(--muted);">заполняйте уроки вручную или импортируйте расписание из .xls в один клик. Умная стартовая страница переключается по времени: до уроков — обзор, во время — расписание, после — домашка.</span>
+            <span style="color: var(--muted);">заполняйте уроки вручную или импортируйте расписание из .xls в один клик. умная стартовая страница переключается по времени: до уроков — обзор, во время — расписание, после — домашка.</span>
           </div>
         </div>
 
@@ -4175,7 +4490,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">✨</span>
           <div>
             <b style="color: var(--success);">умный ввод заданий</b><br>
-            <span style="color: var(--muted);">вставьте «дз по русскому завтра сочинение» — система сама поймёт предмет, дедлайн и сложность. Распознаёт сокращения: биол, геом, англ, инф, физ.</span>
+            <span style="color: var(--muted);">вставьте «дз по русскому завтра сочинение» — система сама поймёт предмет, дедлайн и сложность. распознаёт сокращения: биол, геом, англ, инф, физ.</span>
           </div>
         </div>
 
@@ -4183,7 +4498,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">⚡</span>
           <div>
             <b style="color: var(--warning);">план и умная сортировка</b><br>
-            <span style="color: var(--muted);">расставляйте приоритеты кнопкой «⚡ по срочности», фильтруйте по категориям и сортируйте по дате. Архив выполненных заданий не мешает.</span>
+            <span style="color: var(--muted);">расставляйте приоритеты кнопкой «⚡ по срочности» и включайте умную сортировку. архив выполненных заданий не мешает.</span>
           </div>
         </div>
 
@@ -4191,7 +4506,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🧠</span>
           <div>
             <b style="color: var(--info);">умная разминка</b><br>
-            <span style="color: var(--muted);">персональные упражнения после работы: кисти для письма, глаза и осанка для чтения. Автоматически подбираются под тип предмета.</span>
+            <span style="color: var(--muted);">персональные упражнения после работы: кисти для письма, глаза и осанка для чтения. автоматически подбираются под тип предмета.</span>
           </div>
         </div>
 
@@ -4199,7 +4514,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🎯</span>
           <div>
             <b style="color: var(--accent);">фокус-таймер и Dynamic Island</b><br>
-            <span style="color: var(--muted);">сворачивайте таймер в верхнюю капсулу eduplan, скрывайте секунды кнопкой «скрыть», получайте системные пуши. Кнопка «начать следующее» переключает на следующую задачу.</span>
+            <span style="color: var(--muted);">сворачивайте таймер в верхнюю капсулу eduplan, скрывайте секунды кнопкой «скрыть», получайте системные пуши. кнопка «начать следующее» переключает на следующую задачу.</span>
           </div>
         </div>
 
@@ -4207,7 +4522,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">🎨</span>
           <div>
             <b style="color: #a78bfa;">5 тем Liquid Glass</b><br>
-            <span style="color: var(--muted);">выберите свой стиль: космос, океан, закат, лес, снег. Каждая тема — с уникальными цветами и эффектами свечения.</span>
+            <span style="color: var(--muted);">выберите свой стиль: тёмный космос, светлое стекло, неоновый аметист, изумрудная волна, закатный рубин.</span>
           </div>
         </div>
 
@@ -4215,12 +4530,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           <span style="font-size: 18px; flex-shrink: 0; line-height: 1.2;">☁️</span>
           <div>
             <b style="color: #6495ed;">синхронизация и настройки</b><br>
-            <span style="color: var(--muted);">облачный бэкап через Supabase, экспорт/импорт данных. Настройки — кнопка ≡ справа внизу.</span>
+            <span style="color: var(--muted);">облачный бэкап через supabase, экспорт/импорт данных. настройки — кнопка ≡ справа внизу.</span>
           </div>
         </div>
       </div>
 
-      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 18px;">понятно, начать работу</button>
+      <button type="button" class="btn-main" onclick="closeWelcomeModal()" style="margin-top: 18px; width: 100%;">понятно, начать работу</button>
     </div>
   </div>
 

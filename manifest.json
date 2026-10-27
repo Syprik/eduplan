@@ -1,15 +1,30 @@
 {
   "short_name": "eduplan",
-  "name": "eduplan",
+  "name": "eduplan — цифровой школьный планировщик",
+  "description": "школьный планировщик с фокус-таймером и синхронизацией",
   "icons": [
     {
       "src": "./apple-touch-icon.png",
       "type": "image/png",
-      "sizes": "180x180"
+      "sizes": "180x180",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "./index.html",
   "background_color": "#090b14",
   "theme_color": "#090b14",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait"
 }
