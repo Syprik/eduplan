@@ -3509,6 +3509,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       // поэтому будим звук прямо в обработчике клика.
       primeAudio();
       const workMins = COMP[t.comp]?.t || state.work;
+      $('timerView').classList.add('active');
       startPhase('work', workMins * 60);
       $('timerToggleBtn').focus();
     }
@@ -3534,6 +3535,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('timerTitle').textContent = 'разминка';
       hidePhaseModal();
       primeAudio();
+      $('timerView').classList.add('active');
       startPhase('break', getBreakDurationMinutes(comp) * 60);
       $('timerToggleBtn').focus();
     }
