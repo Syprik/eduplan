@@ -6,22 +6,23 @@
   <link rel="apple-touch-icon-precomposed" href="./apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="eduplan">
+  <meta name="apple-mobile-web-app-title" content="studyflow">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>eduplan — цифровой школьный планировщик</title>
-  <meta name="description" content="eduplan — бесплатный планировщик для школьника: расписание уроков, домашние задания, таймер фокуса и серия продуктивных дней. Работает без регистрации, данные хранятся только в вашем браузере.">
+  <title>studyflow — цифровой школьный планировщик</title>
+  <meta name="description" content="studyflow — умный планировщик для учёбы: расписание уроков, домашние задания, таймер фокуса и умная разминка. Работает без регистрации.">
   <meta name="theme-color" content="#090b14">
   <meta name="color-scheme" content="dark light">
-  <meta name="author" content="eduplan">
+  <meta name="author" content="studyflow">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="eduplan — цифровой школьный планировщик">
-  <meta property="og:description" content="Расписание, домашние задания, таймер фокуса и серия продуктивных дней. Без регистрации — данные остаются в вашем браузере.">
-  <meta property="og:locale" content="ru_RU">
-  <meta name="twitter:card" content="summary">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
+  <meta property="og:title" content="studyflow — цифровой школьный планировщик">
+  <meta property="og:description" content="Расписание, домашние задания, таймер фокуса и умная разминка в стиле Liquid Glass.">
+  <!-- Векторный favicon StudyFlow с фирменной петлей 'S' -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f0ff'/%3E%3Cstop offset='50%25' stop-color='%234361ee'/%3E%3Cstop offset='100%25' stop-color='%238e61ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23090b14'/%3E%3Cpath d='M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84' stroke='url(%23g)' stroke-width='11' stroke-linecap='round'/%3E%3Cpath d='M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16' stroke='url(%23g)' stroke-width='11' stroke-linecap='round'/%3E%3Cline x1='36' y1='48' x2='54' y2='58' stroke='url(%23g)' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='34' cy='47' r='6' fill='%2300f0ff'/%3E%3C/svg%3E">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300..900;1,6..12,300..900&display=swap');
+
     :root {
       --bg: #090b14;
       --card: linear-gradient(135deg, rgba(32, 38, 66, 0.28) 0%, rgba(16, 20, 38, 0.16) 100%);
@@ -55,6 +56,11 @@
       --chip-bg: rgba(255, 255, 255, 0.05);
       --day-bg: rgba(255, 255, 255, 0.04);
       --overlay: rgba(5, 7, 16, 0.15);
+
+      /* Градиенты адаптивного логотипа StudyFlow */
+      --sf-flow-1: #00f0ff;
+      --sf-flow-mid: #3a86ff;
+      --sf-flow-2: #8e61ff;
     }
     [data-theme="light"] {
       --bg: #e2e8f0;
@@ -71,6 +77,9 @@
       --muted: #5e6b87;
       --mesh-2: #7b8cff;
       --mesh-4: #a78bfa;
+      --sf-flow-1: #00b4d8;
+      --sf-flow-mid: #4361ee;
+      --sf-flow-2: #3a0ca3;
       --input-bg: rgba(255, 255, 255, 0.75);
       --track: rgba(0, 0, 0, 0.08);
       --ctrl-bg: rgba(255, 255, 255, 0.6);
@@ -95,6 +104,9 @@
       --glow: rgba(213, 0, 249, 0.4);
       --mesh-2: #8e2de2;
       --mesh-4: #e056fd;
+      --sf-flow-1: #00e5ff;
+      --sf-flow-mid: #e040fb;
+      --sf-flow-2: #aa00ff;
       --overlay: rgba(17, 5, 33, 0.08);
     }
     [data-theme="emerald"] {
@@ -110,6 +122,9 @@
       --glow: rgba(0, 230, 153, 0.4);
       --mesh-2: #0f9b6c;
       --mesh-4: #5eead4;
+      --sf-flow-1: #38ef7d;
+      --sf-flow-mid: #00e699;
+      --sf-flow-2: #00a86b;
       --overlay: rgba(3, 20, 15, 0.15);
     }
     [data-theme="sunset"] {
@@ -125,6 +140,9 @@
       --glow: rgba(255, 87, 87, 0.4);
       --mesh-2: #ff416c;
       --mesh-4: #ffb56b;
+      --sf-flow-1: #ffd166;
+      --sf-flow-mid: #ff7b54;
+      --sf-flow-2: #ff416c;
       --overlay: rgba(24, 9, 11, 0.08);
     }
 
@@ -138,7 +156,7 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -480,11 +498,22 @@
       transform: translateZ(0);
     }
     .brand-title {
-      font-size: 20px; font-weight: 800;
-      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+      font-family: 'Nunito Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      background: linear-gradient(135deg, var(--text) 45%, var(--accent));
       background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+    }
+
+    /* Стили адаптивного логотипа StudyFlow */
+    .sf-icon-svg {
+      display: inline-block;
+      vertical-align: middle;
+      filter: drop-shadow(0 0 8px var(--glow));
+      transition: transform 0.3s ease, filter 0.3s ease;
     }
     .icon-btn {
       background: var(--icon-bg); border: 1px solid var(--border);
@@ -1191,9 +1220,21 @@
 </head>
 <body>
   <div id="appSplash">
-    <div class="splash-logo">❖</div>
-    <div class="splash-title">eduplan</div>
-    <div class="splash-sub">загрузка планировщика...</div>
+    <svg class="sf-icon-svg splash-logo" width="46" height="46" viewBox="0 0 100 100" fill="none">
+      <defs>
+        <linearGradient id="splashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="var(--sf-flow-1)" />
+          <stop offset="50%" stop-color="var(--sf-flow-mid)" />
+          <stop offset="100%" stop-color="var(--sf-flow-2)" />
+        </linearGradient>
+      </defs>
+      <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84" stroke="url(#splashGrad)" stroke-width="12" stroke-linecap="round"/>
+      <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16" stroke="url(#splashGrad)" stroke-width="12" stroke-linecap="round"/>
+      <line x1="36" y1="48" x2="54" y2="58" stroke="url(#splashGrad)" stroke-width="8" stroke-linecap="round"/>
+      <circle cx="34" cy="47" r="6" fill="var(--sf-flow-1)"/>
+    </svg>
+    <div class="splash-title">studyflow</div>
+    <div class="splash-sub">поток фокуса и продуктивности...</div>
   </div>
 
   <div class="liquid-mesh" id="meshBg"></div>
@@ -1201,8 +1242,20 @@
   <header>
     <div id="toast" class="brand toast" role="status" aria-live="polite" aria-atomic="true">
       <span class="brand-content brand-default" id="brandDefault">
-        <span class="brand-logo">❖</span>
-        <span class="brand-title">eduplan</span>
+        <svg class="sf-icon-svg brand-logo" width="22" height="22" viewBox="0 0 100 100" fill="none">
+          <defs>
+            <linearGradient id="brandLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="var(--sf-flow-1)" />
+              <stop offset="50%" stop-color="var(--sf-flow-mid)" />
+              <stop offset="100%" stop-color="var(--sf-flow-2)" />
+            </linearGradient>
+          </defs>
+          <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84" stroke="url(#brandLogoGrad)" stroke-width="13" stroke-linecap="round"/>
+          <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16" stroke="url(#brandLogoGrad)" stroke-width="13" stroke-linecap="round"/>
+          <line x1="36" y1="48" x2="54" y2="58" stroke="url(#brandLogoGrad)" stroke-width="9" stroke-linecap="round"/>
+          <circle cx="34" cy="47" r="6.5" fill="var(--sf-flow-1)"/>
+        </svg>
+        <span class="brand-title">studyflow</span>
       </span>
       <span class="brand-content brand-notice" id="brandNotice" aria-hidden="true">
         <span id="toastIcon" hidden></span>
@@ -1518,7 +1571,14 @@
       <!-- Анимированная капсула настроек -->
       <div class="settings-brand-pill" id="setModalFooter">
         <div class="settings-pill-default" id="setModalFooterDefault">
-          <span class="settings-pill-logo">❖</span> • <span class="settings-pill-ver">v4.0.0</span>
+          <span class="settings-pill-logo">
+            <svg class="sf-icon-svg" width="16" height="16" viewBox="0 0 100 100" fill="none">
+              <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102" stroke="var(--accent)" stroke-width="14" stroke-linecap="round"/>
+              <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2" stroke="var(--accent)" stroke-width="14" stroke-linecap="round"/>
+              <circle cx="34" cy="47" r="7" fill="var(--sf-flow-1)"/>
+            </svg>
+          </span>
+          <span class="settings-pill-ver" style="margin-left:4px;">studyflow v4.0.0</span>
         </div>
         <div class="settings-pill-notice" id="setModalFooterNotice" aria-live="polite">
           <span id="setNoticeIcon" class="settings-notice-icon"></span>
@@ -1846,7 +1906,7 @@
     const pad = n => String(n).padStart(2, '0');
     const DEFAULT_TITLE = document.title;
     const DATA_VERSION = 2;
-    const DATA_SIGNATURE = 'EDUPLAN_BACKUP_V2_LIQUID_GLASS';
+    const DATA_SIGNATURE = 'STUDYFLOW_BACKUP_V1_LIQUID_GLASS';
     const VALID_THEMES = ['dark', 'light', 'purple', 'emerald', 'sunset'];
     const VALID_TABS = ['auto', 'overview', 'schedule', 'add', 'tasks', 'archive'];
     const VALID_PRIO = ['critical', 'urgent', 'important', 'normal', 'later'];
@@ -3568,29 +3628,32 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       } else {
         ctx.rect(0, 0, 64, 64);
       }
-      ctx.fillStyle = '#161b2e';
+      ctx.fillStyle = '#090b14';
       ctx.fill();
 
+      // Фоновое кольцо
       const cx = 32, cy = 32, r = 24;
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.stroke();
 
+      // Прогресс-бар
       const startAngle = -Math.PI / 2;
       const endAngle = startAngle + (Math.max(0, Math.min(1, fraction)) * Math.PI * 2);
       ctx.beginPath();
       ctx.arc(cx, cy, r, startAngle, endAngle);
-      ctx.strokeStyle = isBreak ? '#06d6a0' : '#8e61ff';
+      ctx.strokeStyle = isBreak ? '#06d6a0' : '#00f0ff';
       ctx.lineCap = 'round';
       ctx.stroke();
 
+      // Символ 'S' по центру
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 22px sans-serif';
+      ctx.font = 'bold 22px "Nunito Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('❖', cx, cy + 1);
+      ctx.fillText('S', cx, cy + 1);
 
       if (faviconEl) {
         faviconEl.href = faviconCanvas.toDataURL('image/png');
@@ -4217,7 +4280,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function exportJSON() {
       const data = {
-        app: 'eduplan',
+        app: 'studyflow',
         signature: DATA_SIGNATURE,
         version: DATA_VERSION,
         exportedAt: new Date().toISOString(),
@@ -4241,11 +4304,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `eduplan_${getLocalToday()}.json`;
+        a.download = `studyflow_${getLocalToday()}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        showToast('резервная копия скачана');
+        showToast('резервная копия studyflow скачана');
       } catch (e) {
         showToast('не удалось создать файл', '!');
       } finally {
@@ -4507,9 +4570,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         try { d = JSON.parse(ev.target.result); }
         catch (err) { showToast('ошибка чтения json: файл повреждён', '!'); return; }
         if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('неверный формат файла', '!'); return; }
-        // Проверка фирменной сигнатуры eduplan
-        if (d.signature !== DATA_SIGNATURE) {
-          showToast('данный файл записан в более ранней версии проекта', '!');
+        // Поддержка как нового StudyFlow, так и всех старых бэкапов Eduplan
+        const hasValidSignature = 
+          d.signature === DATA_SIGNATURE || 
+          d.signature === 'EDUPLAN_BACKUP_V2_LIQUID_GLASS' || 
+          d.app === 'studyflow' || 
+          d.app === 'eduplan';
+
+        if (!hasValidSignature) {
+          showToast('это не файл резервной копии studyflow / eduplan', '!');
           return;
         }
         if (typeof d.version === 'number' && d.version > DATA_VERSION) {
@@ -4819,8 +4888,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         tab: 'overview',
         getTarget: () => $('toast'),
         arrow: 'top',
-        title: '❖ dynamic island',
-        text: 'верхняя капсула — живая. во время учебы таймер сворачивается прямо сюда, освобождая экран.'
+        title: '⚡ dynamic island',
+        text: 'верхняя капсула — живая. во время учебы таймер втягивается прямо сюда, освобождая экран.'
       },
       {
         tab: 'overview',
@@ -4962,8 +5031,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     <div class="glass modal-box" style="max-width: 520px;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 20px; color: var(--accent); filter: drop-shadow(0 0 6px var(--glow));">❖</span>
-          <span style="font-weight: 800; font-size: 17px; color: var(--text);">добро пожаловать в eduplan</span>
+          <svg class="sf-icon-svg" width="24" height="24" viewBox="0 0 100 100" fill="none">
+            <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"/>
+            <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"/>
+            <circle cx="34" cy="47" r="6" fill="var(--sf-flow-1)"/>
+          </svg>
+          <span style="font-weight: 800; font-size: 17px; color: var(--text);">добро пожаловать в studyflow</span>
         </div>
       </div>
       <div class="modal-body" style="padding-top: 14px;">
