@@ -17,8 +17,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="studyflow — цифровой школьный планировщик">
   <meta property="og:description" content="Расписание, домашние задания, таймер фокуса и умная разминка в стиле Liquid Glass.">
-  <!-- Векторный favicon StudyFlow с фирменной петлей 'S' -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f0ff'/%3E%3Cstop offset='50%25' stop-color='%234361ee'/%3E%3Cstop offset='100%25' stop-color='%238e61ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23090b14'/%3E%3Cpath d='M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84' stroke='url(%23g)' stroke-width='11' stroke-linecap='round'/%3E%3Cpath d='M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16' stroke='url(%23g)' stroke-width='11' stroke-linecap='round'/%3E%3Cline x1='36' y1='48' x2='54' y2='58' stroke='url(%23g)' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='34' cy='47' r='6' fill='%2300f0ff'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%238e61ff'/%3E%3Ctext x='50' y='72' font-size='62' font-family='sans-serif' font-weight='bold' text-anchor='middle' fill='white'%3E%E2%9D%96%3C/text%3E%3C/svg%3E">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300..900;1,6..12,300..900&display=swap');
@@ -288,12 +287,12 @@
       top: 0;
       z-index: 40;
       max-width: 1080px;
-      height: 68px;
+      height: 64px;
       margin: 0 auto;
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      padding: 14px 20px 0;
+      padding: 12px 16px 0;
       pointer-events: none;
       background: none;
       border: none;
@@ -305,9 +304,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 46px;
+      min-height: 40px;
       max-width: calc(100vw - 24px);
-      padding: 8px 22px;
+      padding: 6px 16px;
       border-radius: 999px;
       background: var(--card);
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -318,21 +317,28 @@
       box-shadow:
         inset 0 1.5px 2px var(--glass-highlight),
         inset 0 -1px 2px var(--glass-rim),
-        0 10px 28px -6px rgba(0, 0, 0, 0.35);
-      transition: box-shadow 0.4s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        0 8px 24px -4px rgba(0, 0, 0, 0.38);
+      transition:
+        min-height 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+        padding 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.36s ease,
+        transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: default;
+      transform: translateZ(0);
     }
     /* Dynamic Island — свёрнутый таймер */
     .brand.island {
       cursor: pointer;
       min-height: 40px;
-      padding: 6px 16px;
+      padding: 6px 14px;
       background: linear-gradient(135deg, rgba(142,97,255,0.18) 0%, rgba(91,54,245,0.10) 100%);
       border-color: var(--accent);
     }
     .brand.island.is-expanded {
-      min-height: 44px;
-      padding: 8px 18px;
+      min-height: 40px;
+      padding: 6px 16px;
       box-shadow:
         inset 0 1.5px 2px var(--glass-highlight),
         inset 0 -1px 2px var(--glass-rim),
@@ -342,7 +348,7 @@
     .island-content {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       font-size: 13px;
       font-weight: 700;
       color: var(--text);
@@ -357,7 +363,7 @@
     .island-time {
       font-variant-numeric: tabular-nums;
       font-weight: 800;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
     .island-phase {
       font-size: 10px;
@@ -377,8 +383,8 @@
       display: flex;
     }
     .island-btn {
-      width: 28px;
-      height: 28px;
+      width: 27px;
+      height: 27px;
       border-radius: 50%;
       border: 1px solid var(--border);
       background: var(--ctrl-bg);
@@ -390,13 +396,11 @@
       padding: 0;
       line-height: 0;
       flex-shrink: 0;
-      transition: background 0.25s cubic-bezier(0.22, 1, 0.36, 1), transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .island-btn svg {
-      display: block;
-    }
-    .island-btn:hover { background: var(--ctrl-hover); transform: scale(1.08); }
-    .island-btn:active { transform: scale(0.92); }
+    .island-btn svg { display: block; }
+    .island-btn:hover { background: var(--ctrl-hover); transform: scale(1.06); }
+    .island-btn:active { transform: scale(0.94); }
     .island-btn.primary {
       background: var(--grad);
       border-color: transparent;
@@ -408,43 +412,46 @@
       gap: 6px;
       max-width: 0;
       opacity: 0;
-      transform: scale(0.85);
+      transform: scale(0.9) translate3d(-4px, 0, 0);
       overflow: hidden;
-      transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      transition:
+        max-width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.22s ease,
+        transform 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+        margin 0.34s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .brand.is-expanded .brand-timer-controls {
       max-width: 120px;
       opacity: 1;
-      transform: scale(1);
+      transform: scale(1) translate3d(0, 0, 0);
       margin-left: 8px;
     }
+    /* Аппаратная смена надписей без заикания */
     .brand-content {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 7px;
       flex-shrink: 0;
+      will-change: transform, opacity;
       transition:
-        opacity 0.24s ease,
-        transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-        filter 0.24s ease;
+        opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .brand-default {
       white-space: nowrap;
       opacity: 1;
-      transform: translateY(0) scale(1);
-      filter: blur(0);
+      transform: translate3d(0, 0, 0);
     }
     .brand-notice {
       position: absolute;
       left: 50%;
       top: 50%;
       width: max-content;
-      max-width: calc(100vw - 68px);
+      max-width: calc(100vw - 64px);
       gap: 8px;
       opacity: 0;
-      transform: translate(-50%, calc(-50% + 6px)) scale(0.92);
-      filter: blur(5px);
+      transform: translate3d(-50%, calc(-50% + 4px), 0);
       pointer-events: none;
     }
     .brand.is-notifying .brand-default {
@@ -452,8 +459,7 @@
       left: 50%;
       top: 50%;
       opacity: 0;
-      transform: translate(-50%, calc(-50% - 6px)) scale(0.9);
-      filter: blur(5px);
+      transform: translate3d(-50%, calc(-50% - 4px), 0);
       pointer-events: none;
     }
     .brand.is-notifying .brand-notice {
@@ -461,8 +467,7 @@
       left: auto;
       top: auto;
       opacity: 1;
-      transform: translate(0, 0) scale(1);
-      filter: blur(0);
+      transform: translate3d(0, 0, 0);
       pointer-events: auto;
     }
     #toastMsg {
@@ -473,47 +478,87 @@
     #toastIcon { flex: 0 0 auto; color: var(--accent); font-size: 14px; }
     .brand.is-notifying #toastIcon[hidden] { display: none; }
     .toast-undo {
-      flex: 0 0 auto; padding: 6px 10px; border: 0; border-radius: 999px;
-      background: var(--ctrl-bg); color: var(--accent); font: inherit; white-space: nowrap;
-      cursor: pointer; transition: background 0.2s ease, transform 0.2s ease;
+      flex: 0 0 auto; padding: 4px 10px; border: 0; border-radius: 999px;
+      background: var(--ctrl-bg); color: var(--accent); font: inherit; font-size: 11.5px;
+      font-weight: 700; white-space: nowrap; cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
     .toast-undo:hover { background: var(--ctrl-hover); }
-    .toast-undo:active { transform: scale(0.96); }
+    .toast-undo:active { transform: scale(0.95); }
     .toast-undo[hidden] { display: none; }
+
+    /* Убран вредный scale(1.015): только мягкое свечение без распирания */
     .brand.is-notifying {
-      transform: translateY(1px) scale(1.015);
       box-shadow:
         inset 0 1.5px 2px var(--glass-highlight),
         inset 0 -1px 2px var(--glass-rim),
-        0 14px 34px -6px rgba(0, 0, 0, 0.4),
-        0 0 24px var(--glow);
+        0 12px 32px -4px rgba(0, 0, 0, 0.4),
+        0 0 20px var(--glow);
     }
     .brand-logo {
-      font-size: 22px;
+      font-size: 18px;
+      line-height: 1;
       color: var(--accent);
-      filter: drop-shadow(0 0 6px var(--glow));
+      filter: drop-shadow(0 0 4px var(--glow));
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      text-rendering: geometricPrecision;
       transform: translateZ(0);
     }
     .brand-title {
       font-family: 'Nunito Sans', sans-serif;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
+      line-height: 1;
       background: linear-gradient(135deg, var(--text) 45%, var(--accent));
+      background-size: 200% 200%;
       background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      animation: brandFlow 3s ease-in-out infinite alternate;
     }
 
-    /* Стили адаптивного логотипа StudyFlow */
-    .sf-icon-svg {
+    /* Мягкий отскок при поимке таймера (без раздувания) */
+    @keyframes islandCatch {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.035); }
+      100% { transform: scale(1); }
+    }
+    .brand.island.is-caught {
+      animation: islandCatch 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .welcome-wordmark {
       display: inline-block;
-      vertical-align: middle;
-      filter: drop-shadow(0 0 8px var(--glow));
-      transition: transform 0.3s ease, filter 0.3s ease;
+      font-family: 'Nunito Sans', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      background: linear-gradient(135deg, var(--text) 45%, var(--accent));
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: brandFlow 3s ease-in-out infinite alternate;
+    }
+
+    .brand-timer #islandSubj {
+      background: linear-gradient(135deg, var(--accent), var(--sf-flow-mid), var(--sf-flow-1));
+      background-size: 200% 200%;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: brandFlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes brandFlow {
+      from { background-position: 0% 50%; }
+      to { background-position: 100% 50%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-title,
+      .welcome-wordmark,
+      .brand-timer #islandSubj {
+        animation: none;
+      }
     }
     .icon-btn {
       background: var(--icon-bg); border: 1px solid var(--border);
@@ -650,6 +695,9 @@
       box-shadow: inset 0 1px 1px var(--glass-highlight);
       font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
     }
+    #periodChips .chip {
+      padding: 6px 10px;
+    }
     .chip.active { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 3px 12px var(--glow); }
     /* Действие, а не фильтр: отличается по виду, чтобы не путать с чипами выбора. */
     .chip-action {
@@ -751,6 +799,7 @@
     .btn-act.btn-success { background: rgba(6, 214, 160, 0.14); color: var(--success); border-color: rgba(6, 214, 160, 0.3); }
     .btn-act.btn-danger { color: var(--danger); }
     .btn-act:disabled { opacity: 0.5; cursor: default; }
+    .ai-coach-btn { width: 100%; margin-top: 10px; }
 
     .bottom-dock {
       position: fixed; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%;
@@ -1220,19 +1269,7 @@
 </head>
 <body>
   <div id="appSplash">
-    <svg class="sf-icon-svg splash-logo" width="46" height="46" viewBox="0 0 100 100" fill="none">
-      <defs>
-        <linearGradient id="splashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="var(--sf-flow-1)" />
-          <stop offset="50%" stop-color="var(--sf-flow-mid)" />
-          <stop offset="100%" stop-color="var(--sf-flow-2)" />
-        </linearGradient>
-      </defs>
-      <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84" stroke="url(#splashGrad)" stroke-width="12" stroke-linecap="round"/>
-      <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16" stroke="url(#splashGrad)" stroke-width="12" stroke-linecap="round"/>
-      <line x1="36" y1="48" x2="54" y2="58" stroke="url(#splashGrad)" stroke-width="8" stroke-linecap="round"/>
-      <circle cx="34" cy="47" r="6" fill="var(--sf-flow-1)"/>
-    </svg>
+    <div class="splash-logo">❖</div>
     <div class="splash-title">studyflow</div>
     <div class="splash-sub">поток фокуса и продуктивности...</div>
   </div>
@@ -1242,19 +1279,7 @@
   <header>
     <div id="toast" class="brand toast" role="status" aria-live="polite" aria-atomic="true">
       <span class="brand-content brand-default" id="brandDefault">
-        <svg class="sf-icon-svg brand-logo" width="22" height="22" viewBox="0 0 100 100" fill="none">
-          <defs>
-            <linearGradient id="brandLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="var(--sf-flow-1)" />
-              <stop offset="50%" stop-color="var(--sf-flow-mid)" />
-              <stop offset="100%" stop-color="var(--sf-flow-2)" />
-            </linearGradient>
-          </defs>
-          <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102 C32 102 20 94 16 84" stroke="url(#brandLogoGrad)" stroke-width="13" stroke-linecap="round"/>
-          <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2 C68 -2 80 6 84 16" stroke="url(#brandLogoGrad)" stroke-width="13" stroke-linecap="round"/>
-          <line x1="36" y1="48" x2="54" y2="58" stroke="url(#brandLogoGrad)" stroke-width="9" stroke-linecap="round"/>
-          <circle cx="34" cy="47" r="6.5" fill="var(--sf-flow-1)"/>
-        </svg>
+        <span class="brand-logo">❖</span>
         <span class="brand-title">studyflow</span>
       </span>
       <span class="brand-content brand-notice" id="brandNotice" aria-hidden="true">
@@ -1373,33 +1398,51 @@
       <div class="title"><span>новое задание</span></div>
       <div class="glass" style="padding: 16px;">
         <form id="addForm">
-          <div class="form-group">
-            <label class="label" for="addDay">учебный день:</label>
-            <select id="addDay" class="input" required>
-              <option value="">выберите день недели...</option>
-              <option value="1">понедельник</option>
-              <option value="2">вторник</option>
-              <option value="3">среда</option>
-              <option value="4">четверг</option>
-              <option value="5">пятница</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="label" for="addSubj">предмет:</label>
-            <select id="addSubj" class="input" required disabled>
-              <option value="">сначала выберите день выше</option>
-            </select>
-            <input type="text" id="addSubjOther" class="input" maxlength="60" placeholder="название предмета или проекта" style="display:none; margin-top:8px;" aria-label="свой предмет">
+          <div class="chips" style="margin-bottom:8px;">
+            <button type="button" class="chip" onclick="applyDemoTask('завтра алгебра №45 и 46')">⚡ алгебра на завтра</button>
+            <button type="button" class="chip" onclick="applyDemoTask('в пятницу история доклад')">📖 доклад по истории</button>
+            <button type="button" class="chip" onclick="applyDemoTask('к понедельнику литература прочитать стр 120')">☕ литература устно</button>
           </div>
           <div class="form-group">
             <label class="label" for="addText">содержание задания:</label>
             <textarea id="addText" class="input" rows="3" maxlength="500" placeholder="параграф, номера упражнений..." required></textarea>
             <div id="smartParseHint" style="font-size: 11.5px; color: var(--accent); margin-top: 4px; display: none; transition: opacity 0.35s ease;"></div>
           </div>
-          <div class="form-group">
-            <label class="label" for="addDue">срок сдачи:</label>
-            <input type="date" id="addDue" class="input">
-          </div>
+          <details class="glass-card" style="margin-top:12px;padding:12px;">
+            <summary style="cursor:pointer;font-weight:700;font-size:12px;color:var(--muted);">точные параметры (день, срок, сложность)</summary>
+            <div class="form-group" style="margin-top:12px;">
+              <label class="label" for="addDay">учебный день:</label>
+              <select id="addDay" class="input" required>
+                <option value="">выберите день недели...</option>
+                <option value="1">понедельник</option>
+                <option value="2">вторник</option>
+                <option value="3">среда</option>
+                <option value="4">четверг</option>
+                <option value="5">пятница</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="label" for="addSubj">предмет:</label>
+              <select id="addSubj" class="input" required disabled>
+                <option value="">сначала выберите день выше</option>
+              </select>
+              <input type="text" id="addSubjOther" class="input" maxlength="60" placeholder="название предмета или проекта" style="display:none; margin-top:8px;" aria-label="свой предмет">
+            </div>
+            <div class="form-group">
+              <label class="label" for="addDue">срок сдачи:</label>
+              <input type="date" id="addDue" class="input">
+            </div>
+            <div class="form-group">
+              <span class="label" id="addCompLabel">сложность:</span>
+              <div class="seg" id="addComp" role="group" aria-labelledby="addCompLabel">
+                <button type="button" class="seg-btn" data-v="test" aria-pressed="false">1 мин</button>
+                <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
+                <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
+                <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
+                <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">≈45 мин</button>
+              </div>
+            </div>
+          </details>
           <div class="form-group">
             <span class="label" id="addPrioLabel">срочность:</span>
             <div class="seg" id="addPrio" role="group" aria-labelledby="addPrioLabel">
@@ -1409,15 +1452,9 @@
               <button type="button" class="seg-btn" data-v="later" aria-pressed="false">позже</button>
             </div>
           </div>
-          <div class="form-group">
-            <span class="label" id="addCompLabel">сложность:</span>
-              <div class="seg" id="addComp" role="group" aria-labelledby="addCompLabel">
-                <button type="button" class="seg-btn" data-v="test" aria-pressed="false">1 мин</button>
-                <button type="button" class="seg-btn" data-v="easy" aria-pressed="false">≈15 мин</button>
-                <button type="button" class="seg-btn active" data-v="normal_comp" aria-pressed="true">≈25 мин</button>
-                <button type="button" class="seg-btn" data-v="medium" aria-pressed="false">≈35 мин</button>
-                <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">≈45 мин</button>
-              </div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <input type="checkbox" id="addRepeat" style="width:16px;height:16px;accent-color:var(--accent);">
+            <label for="addRepeat" style="font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;">повторять каждую неделю</label>
           </div>
           <button type="submit" class="btn-main" style="margin-top: 8px;">добавить в план</button>
         </form>
@@ -1546,6 +1583,10 @@
         <div style="font-weight: 800; font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
           <span>☁️ облачная синхронизация</span>
         </div>
+        <div id="cloudSyncStatus" style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+          <span class="sync-dot" style="width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;"></span>
+          <span class="sync-text">не синхронизировано</span>
+        </div>
 
         <!-- форма входа / регистрации -->
         <div id="auth-guest-ui">
@@ -1571,14 +1612,9 @@
       <!-- Анимированная капсула настроек -->
       <div class="settings-brand-pill" id="setModalFooter">
         <div class="settings-pill-default" id="setModalFooterDefault">
-          <span class="settings-pill-logo">
-            <svg class="sf-icon-svg" width="16" height="16" viewBox="0 0 100 100" fill="none">
-              <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102" stroke="var(--accent)" stroke-width="14" stroke-linecap="round"/>
-              <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2" stroke="var(--accent)" stroke-width="14" stroke-linecap="round"/>
-              <circle cx="34" cy="47" r="7" fill="var(--sf-flow-1)"/>
-            </svg>
-          </span>
-          <span class="settings-pill-ver" style="margin-left:4px;">studyflow v4.0.0</span>
+          <span class="settings-pill-logo">❖</span>
+          <span aria-hidden="true">•</span>
+          <span class="settings-pill-ver">studyflow v4.0.0</span>
         </div>
         <div class="settings-pill-notice" id="setModalFooterNotice" aria-live="polite">
           <span id="setNoticeIcon" class="settings-notice-icon"></span>
@@ -1641,6 +1677,10 @@
             <button type="button" class="seg-btn" data-v="hard" aria-pressed="false">≈45 мин</button>
           </div>
         </div>
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="checkbox" id="editRepeat" style="width:16px;height:16px;accent-color:var(--accent);">
+          <label for="editRepeat" style="font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;">повторять каждую неделю</label>
+        </div>
         <button type="submit" class="btn-main">сохранить изменения</button>
       </form>
     </div>
@@ -1698,6 +1738,7 @@
           </div>
           <div id="stepTimer" style="font-variant-numeric: tabular-nums; font-weight: 800; font-size: 16px; color: var(--success); flex-shrink: 0;">0:25</div>
         </div>
+        <button type="button" id="aiCoachBtn" class="btn-act btn-go ai-coach-btn">✨ AI-совет (Nemotron)</button>
 
         <div class="prog-bg" style="height: 4px; margin-top: 8px;">
           <div class="prog-fill" id="breakStepProg" style="background: var(--success); box-shadow: 0 0 10px rgba(6,214,160,0.4); width: 0%;"></div>
@@ -1810,7 +1851,10 @@
     }
 
     async function checkUser() {
-      if (!sbClient) return;
+      if (!sbClient) {
+        setSyncStatus('offline');
+        return;
+      }
 
       let session = null;
       try {
@@ -1839,13 +1883,18 @@
         if (guestUI) guestUI.style.display = 'block';
         if (userUI) userUI.style.display = 'none';
         if (emailSpan) emailSpan.textContent = '';
+        setSyncStatus('offline');
       }
     }
 
     // 2. Загрузка данных из облака
     let _cloudSyncToastShown = false;
     async function loadFromCloud(userId, showNotify = true) {
-      if (!sbClient || !userId) return;
+      if (!sbClient || !userId) {
+        setSyncStatus('offline');
+        return;
+      }
+      setSyncStatus('syncing');
       try {
         const { data, error } = await sbClient
           .from('user_data')
@@ -1855,6 +1904,7 @@
 
         if (error) {
           console.error('Ошибка загрузки из облака:', error.message);
+          setSyncStatus('error');
           return;
         }
 
@@ -1896,8 +1946,10 @@
             showToast('данные синхронизированы с облаком');
           }
         }
+        setSyncStatus('saved');
       } catch (err) {
         console.error('критическая ошибка разбора данных облака:', err);
+        setSyncStatus('error');
       }
     }
 
@@ -1934,37 +1986,72 @@
 };
 
 function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
-  const s = String(query).toLowerCase();
-  const isWriting = /(алгебр|геометр|русск|физик|хим|матем|конспект|сочинен|черчен|письм|тетрад)/i.test(s);
-  const isReading = /(истор|литер|биолог|географ|информ|чтени|англ|обществ|книг|учебник|параграф)/i.test(s);
-  
-  let steps = [];
-  let categoryName = 'общее восстановление';
+  const text = String(query || '').toLocaleLowerCase('ru');
+  const cycleNumber = Number.isFinite(Number(cycle)) ? Math.max(1, Number(cycle)) : 1;
+  const isEvening = new Date().getHours() >= 17;
+  const isScreenHeavy = /(информ\S*|комп\S*|тест\S*|презентац\S*|код\S*|сайт\S*)/iu.test(text);
+  const isPaperHeavy = /(конспект\S*|сочинен\S*|тетрад\S*|письм\S*|черчен\S*|упр\S*)/iu.test(text);
+  const mediumType = isScreenHeavy ? 'экран' : isPaperHeavy ? 'письмо' : 'общее';
+  const dur = comp === 'test' ? 18 : comp === 'easy' ? 25 : comp === 'hard' ? 35 : 30;
+  let steps;
+  let categoryName;
 
-  if (isWriting) {
-    categoryName = 'кисти и шея (письмо)';
-    steps.push(
-      { title: 'волна кистями', desc: 'сцепи пальцы в замок и сделай плавные волновые движения', dur: comp === 'test' ? 20 : 30 },
-      { title: 'сведение лопаток', desc: 'отведи плечи назад, сведи лопатки и расправь грудную клетку', dur: comp === 'test' ? 20 : 35 },
-      { title: 'вытягивание пальцев', desc: 'вытяни ладонь вперед, мягко потяни пальцы на себя', dur: comp === 'test' ? 20 : 30 }
-    );
-  } else if (isReading) {
-    categoryName = 'глаза и движение (чтение)';
-    steps.push(
-      { title: 'правило 20-20-20', desc: 'посмотри в окно на самый дальний объект за стеклом', dur: comp === 'test' ? 20 : 30 },
-      { title: 'встань со стула', desc: 'поднимись во весь рост, потянись и немного пройдись', dur: comp === 'test' ? 20 : 35 },
-      { title: 'круги глазами', desc: 'медленно опиши взглядом круг по часовой стрелке и обратно', dur: comp === 'test' ? 20 : 25 }
-    );
+  if (cycleNumber < 2) {
+    categoryName = isEvening ? 'цикл 1: вечерняя перезагрузка зрения' : 'цикл 1: зрительная перезагрузка';
+    steps = [
+      { title: 'правило 20-20-20', desc: 'на 20 секунд переведи взгляд на объект примерно в 6 метрах или дальше и спокойно поморгай', dur: 20 }
+    ];
+  } else if (cycleNumber < 3) {
+    if (mediumType === 'письмо') {
+      categoryName = isEvening ? 'вечернее расслабление: кисти и шея (письмо)' : 'цикл 2: кисти и осанка (письмо)';
+      steps = [
+        { title: 'мягкая разминка кистей', desc: 'раскрой и мягко сожми пальцы, затем сделай несколько плавных кругов кистями', dur },
+        isEvening
+          ? { title: 'расслабь шею', desc: 'медленно наклони голову к плечу в комфортной амплитуде, затем смени сторону', dur }
+          : { title: 'расправь плечи', desc: 'опусти плечи, мягко сведи лопатки и расправь грудную клетку без усилия', dur }
+      ];
+      if (isEvening) {
+        steps.push({ title: 'спокойное дыхание', desc: 'вдохни на 4 счёта и мягко выдохни на 6; не задерживай дыхание', dur });
+      }
+    } else if (mediumType === 'экран') {
+      categoryName = isEvening ? 'вечернее расслабление и глаза (экран)' : 'цикл 2: глаза и моргание (экран)';
+      steps = [
+        { title: 'переведи взгляд вдаль', desc: 'посмотри на удалённый объект и несколько раз спокойно поморгай', dur },
+        isEvening
+          ? { title: 'ладони для отдыха глаз', desc: 'прикрой глаза тёплыми ладонями без нажима и спокойно подыши', dur }
+          : { title: 'расслабь глаза', desc: 'закрой глаза на несколько секунд, не надавливая на веки, затем мягко открой', dur }
+      ];
+      if (isEvening) {
+        steps.push({ title: 'спокойное дыхание', desc: 'вдохни на 4 счёта и медленно выдохни на 6; выбери комфортный ритм', dur });
+      }
+    } else if (isEvening) {
+      categoryName = 'вечернее расслабление и шея';
+      steps = [
+        { title: 'мягкое расслабление шеи', desc: 'медленно наклони голову к плечу в комфортной амплитуде, затем смени сторону', dur },
+        { title: 'спокойное дыхание', desc: 'вдохни носом на 4 счёта, выдохни медленно на 6; повтори без задержки дыхания', dur }
+      ];
+    } else {
+      categoryName = 'цикл 2: плечи и циркуляция';
+      steps = [
+        { title: 'круги плечами', desc: 'сделай несколько плавных кругов плечами назад, не поднимая их к ушам', dur },
+        { title: 'разомнись на месте', desc: 'встань или выпрями спину и легко разомни ноги и плечи', dur }
+      ];
+    }
   } else {
-    steps.push(
-      { title: 'отдых для глаз', desc: 'прикрой веки ладонями, полностью расслабь зрение', dur: comp === 'test' ? 20 : 30 },
-      { title: 'мягкие наклоны шеи', desc: 'плавно наклоняй голову к правому и левому плечу', dur: comp === 'test' ? 20 : 35 },
-      { title: 'потягивание', desc: 'подними руки над головой и мягко вытяни позвоночник', dur: comp === 'test' ? 20 : 30 }
-    );
-  }
-
-  if (cycle >= 2 || comp === 'hard') {
-    steps.push({ title: 'перезагрузка дыхания', desc: 'глубокий вдох носом 4 сек, задержка 4 сек, выдох 6 сек', dur: comp === 'test' ? 20 : 35 });
+    categoryName = isEvening
+      ? `вечернее расслабление: тело и ${mediumType === 'экран' ? 'глаза' : mediumType === 'письмо' ? 'шея' : 'дыхание'}`
+      : `цикл ${cycleNumber}: полная разгрузка${mediumType === 'экран' ? ' и глаза' : mediumType === 'письмо' ? ' и осанка' : ' тела'}`;
+    steps = [
+      { title: 'поднимись во весь рост', desc: 'поднимись со стула, потянись вверх и спокойно опусти плечи', dur },
+      { title: 'разгрузи спину', desc: 'мягко расправь грудную клетку и потянись макушкой вверх; остановись при дискомфорте', dur },
+      isEvening
+        ? { title: 'спокойное дыхание 4-7-8', desc: 'если комфортно, вдохни на 4 счёта, мягко задержи на 7 и выдохни на 8; пропусти задержку, если она неприятна', dur }
+        : { title: 'разомни плечи и ноги', desc: 'сделай несколько лёгких движений плечами и пройдись на месте', dur }
+    ];
+    if (isEvening) {
+      steps.push({ title: 'мягко расслабь шею', desc: 'наклони голову к плечу в комфортной амплитуде, затем смени сторону', dur });
+      steps.push({ title: 'отдых для глаз', desc: 'прикрой глаза ладонями без нажима и спокойно подыши', dur });
+    }
   }
 
   return { steps, categoryName };
@@ -2019,13 +2106,43 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     // ---------- Утилиты ----------
     function haptic(type = 'light') {
-      if (!state.haptic || !navigator.vibrate) return;
+      if (!state.haptic) return;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const vibrationPatterns = {
+        light: 20,
+        medium: 40,
+        success: [15, 45, 20],
+        warning: [40, 50, 40],
+        error: [40, 50, 40]
+      };
       try {
-        if (type === 'light') navigator.vibrate(12);
-        else if (type === 'medium') navigator.vibrate(24);
-        else if (type === 'success') navigator.vibrate([15, 50, 25]);
-        else if (type === 'warning') navigator.vibrate([30, 40, 30]);
-      } catch (e) {}
+        if (!isIOS && typeof navigator.vibrate === 'function') {
+          navigator.vibrate(vibrationPatterns[type] || vibrationPatterns.light);
+          return;
+        }
+
+        const ctx = getAudio();
+        if (!ctx) return;
+        const frequency = type === 'warning' || type === 'error' ? 160
+          : type === 'medium' ? 260
+          : 320;
+        const impulses = type === 'success' ? [0, 0.07] : [0];
+        for (const offset of impulses) {
+          const start = ctx.currentTime + offset;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(frequency, start);
+          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.025);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.03);
+        }
+      } catch (err) {
+        console.warn('не удалось воспроизвести тактильный отклик:', err);
+      }
     }
 
     function toggleHaptic(en) {
@@ -2043,8 +2160,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!subjName) return '';
       const s = subjName.toLowerCase().trim();
       const today = new Date();
-      const todayDay = today.getDay() || 7; // 1 - пн ... 7 - вс
-
       const matchingDays = [];
       for (let d = 1; d <= 5; d++) {
         const list = state.schedule[d] || [];
@@ -2137,6 +2252,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let pendingUndo = null;
     let brandCleanupTimer = null;
     let brandAnim = null;
+
     function animateBrandState(notifying) {
       const capsule = $('toast');
       const notice = $('brandNotice');
@@ -2154,30 +2270,39 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         return;
       }
 
+      // Замеряем исходный размер
       const firstRect = capsule.getBoundingClientRect();
       if (!notifying && capsule.classList.contains('is-notifying')) {
         notice.style.width = `${notice.getBoundingClientRect().width}px`;
       } else {
         notice.style.removeProperty('width');
       }
+
       if (brandAnim) { brandAnim.cancel(); brandAnim = null; }
       capsule.style.removeProperty('width');
       capsule.style.removeProperty('height');
 
+      // Переключаем состояние контента
       capsule.classList.toggle('is-notifying', notifying);
       $('brandDefault').setAttribute('aria-hidden', String(notifying));
       notice.setAttribute('aria-hidden', String(!notifying));
-      const lastRect = capsule.getBoundingClientRect();
 
-      if (typeof capsule.animate === 'function') {
+      // Замеряем целевой размер
+      const lastRect = capsule.getBoundingClientRect();
+      const dw = Math.abs(firstRect.width - lastRect.width);
+      const dh = Math.abs(firstRect.height - lastRect.height);
+
+      // Анимируем только если габариты реально изменились хотя бы на 1.5px
+      if (typeof capsule.animate === 'function' && (dw > 1.5 || dh > 1.5)) {
         const animation = capsule.animate(
           [
             { width: `${firstRect.width}px`, height: `${firstRect.height}px` },
             { width: `${lastRect.width}px`, height: `${lastRect.height}px` }
           ],
-          { duration: 480, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' }
+          { duration: 360, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'both' }
         );
         brandAnim = animation;
+
         animation.onfinish = () => {
           if (brandAnim !== animation) return;
           brandAnim = null;
@@ -2190,20 +2315,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             if (!pendingUndo) $('toastUndo').hidden = true;
           }
         };
+
         brandCleanupTimer = setTimeout(() => {
           if (brandAnim === animation) animation.finish();
-        }, 540);
+        }, 400);
       } else {
-        capsule.style.width = `${lastRect.width}px`;
-        capsule.style.height = `${lastRect.height}px`;
-        brandCleanupTimer = setTimeout(() => {
-          capsule.style.removeProperty('width');
-          capsule.style.removeProperty('height');
-          if (!notifying) {
-            notice.style.removeProperty('width');
-            if (!pendingUndo) $('toastUndo').hidden = true;
-          }
-        }, 540);
+        capsule.style.removeProperty('width');
+        capsule.style.removeProperty('height');
+        if (!notifying) {
+          notice.style.removeProperty('width');
+          if (!pendingUndo) $('toastUndo').hidden = true;
+        }
       }
     }
 
@@ -2316,7 +2438,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           showToast('не удалось отменить: задача уже изменилась', '!');
           return;
         }
+        const repeatTaskIndex = action.repeatTask
+          ? state.tasks.findIndex(task => task.id === action.repeatTask.id)
+          : -1;
+        if (repeatTaskIndex !== -1
+            && JSON.stringify(state.tasks[repeatTaskIndex]) !== JSON.stringify(action.repeatTask)) {
+          showToast('не удалось отменить: новая еженедельная задача уже изменена', '!');
+          return;
+        }
+        if (action.repeatTask && state.archive.some(task => task.id === action.repeatTask.id)) {
+          showToast('не удалось отменить: новая еженедельная задача уже выполнена', '!');
+          return;
+        }
         state.archive.splice(archiveIndex, 1);
+        if (repeatTaskIndex !== -1) state.tasks.splice(repeatTaskIndex, 1);
         state.tasks.splice(Math.min(action.index, state.tasks.length), 0, action.task);
         state.doneTotal = Math.max(0, state.doneTotal - 1);
       }
@@ -2397,8 +2532,32 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
     }
 
+    function setSyncStatus(status, text) {
+      const badge = $('cloudSyncStatus');
+      if (!badge) return;
+      const dot = badge.querySelector('.sync-dot');
+      const label = badge.querySelector('.sync-text');
+      const statusColors = {
+        syncing: 'var(--warning)',
+        saved: 'var(--success)',
+        error: 'var(--danger)',
+        offline: 'var(--muted)'
+      };
+      const statusText = {
+        syncing: 'сохранение в облако...',
+        saved: `синхронизировано (${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`,
+        error: 'ошибка синхронизации',
+        offline: 'локальный режим'
+      };
+      dot.style.background = statusColors[status] || 'var(--muted)';
+      label.textContent = text || statusText[status] || 'не синхронизировано';
+    }
+
     let cloudSyncTimer = null;
+    let cloudSyncGeneration = 0;
+    let cloudSyncPromise = Promise.resolve();
     function save(syncCloud = true) {
+      if (resetting) return true;
       const data = {
         ep_theme: state.theme,
         ep_liquid: String(state.liquid),
@@ -2431,30 +2590,48 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (syncCloud && sbClient) {
         clearTimeout(cloudSyncTimer);
         cloudSyncTimer = setTimeout(async () => {
-          try {
-            const { data: { user } } = await sbClient.auth.getUser();
-            if (!user) return;
-            const { data: existing } = await sbClient
-              .from('user_data')
-              .select('id')
-              .eq('user_id', user.id)
-              .maybeSingle();
+          const generation = cloudSyncGeneration;
+          cloudSyncPromise = cloudSyncPromise.then(async () => {
+            if (resetting || generation !== cloudSyncGeneration) return;
+            setSyncStatus('syncing');
+            try {
+              const { data: authData, error: authError } = await sbClient.auth.getUser();
+              if (authError) throw authError;
+              const user = authData?.user;
+              if (!user) {
+                setSyncStatus('offline');
+                return;
+              }
+              const { data: existing, error: lookupError } = await sbClient
+                .from('user_data')
+                .select('id')
+                .eq('user_id', user.id)
+                .maybeSingle();
+              if (lookupError) throw lookupError;
+              if (resetting || generation !== cloudSyncGeneration) return;
 
-            if (existing) {
-              await sbClient
-                .from('user_data')
-                .update({ payload: data, updated_at: new Date().toISOString() })
-                .eq('user_id', user.id);
-            } else {
-              await sbClient
-                .from('user_data')
-                .insert([{ user_id: user.id, payload: data }]);
+              if (existing) {
+                const { error } = await sbClient
+                  .from('user_data')
+                  .update({ payload: data, updated_at: new Date().toISOString() })
+                  .eq('user_id', user.id);
+                if (error) throw error;
+              } else {
+                const { error } = await sbClient
+                  .from('user_data')
+                  .insert([{ user_id: user.id, payload: data }]);
+                if (error) throw error;
+              }
+              console.log('данные синхронизированы с облаком Supabase');
+              setSyncStatus('saved');
+            } catch (err) {
+              console.error('ошибка облачной синхронизации:', err);
+              setSyncStatus('error');
             }
-            console.log('данные синхронизированы с облаком Supabase');
-          } catch (err) {
-            console.error('ошибка облачной синхронизации:', err);
-          }
+          });
         }, 350);
+      } else if (syncCloud) {
+        setSyncStatus('offline');
       }
 
       return ok;
@@ -2477,33 +2654,44 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       return { list: out, truncated };
     }
 
-    function cleanTaskText(rawText, subjName = '') {
+    function cleanTaskText(rawText) {
       if (!rawText) return '';
-      let s = ' ' + rawText.trim() + ' ';
+      return String(rawText)
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^(?:дз|домашк\S*|задание(?:\s+на\s+дом)?)\s*/iu, '')
+        .replace(/^(?:(?:по|к|на|до|в|во)\s+)+/iu, '')
+        .replace(/^[:;\s–—\-.,]+|[:;\s–—\-.,]+$/g, '')
+        .trim();
+    }
 
-      // Удаляем префиксы дз без \b
-      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:дз|домашк\S*|задание(?:\s+на\s+дом)?)(?=[^\p{L}\p{N}]|$)/giu, ' ');
+    function normalizeGluedTokens(str) {
+      return String(str || '')
+        .replace(/(№|#)([^\s])/gu, '$1 $2')
+        .replace(/(\d+)([\p{L}])/gu, '$1 $2')
+        .replace(/([\p{L}])(\d+)/gu, '$1 $2')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
 
-      // Удаляем числовые и строковые даты
-      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до)?\s*\d{1,2}[./]\d{1,2}(?:[./]\d{2,4})?(?=[^\p{L}\p{N}]|$)/giu, ' ');
-      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до|в|во)?\s*(?:следующ\S*\s+)?(?:понедельник\S*|вторник\S*|сред\S*|четверг\S*|пятниц\S*|суббот\S*|воскресень\S*)(?=[^\p{L}\p{N}]|$)/giu, ' ');
-      s = s.replace(/(?:^|[^\p{L}\p{N}])(?:к|на|до|в|во)?\s*(?:сегодня\S*|завтра\S*|послезавтра)(?=[^\p{L}\p{N}]|$)/giu, ' ');
-
-      // Удаляем предмет по базе
-      if (subjName) {
-        const sLow = subjName.toLowerCase();
-        const item = MASTER_SUBJECTS.find(m => m.name.toLowerCase() === sLow || sLow.includes(m.name.toLowerCase().slice(0, 4)));
-        if (item && item.clean) {
-          s = s.replace(item.clean, ' ');
+    function levenshtein(a, b) {
+      if (Math.abs(a.length - b.length) > 1) return 2;
+      let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+      for (let i = 1; i <= a.length; i++) {
+        const current = [i];
+        let rowMinimum = i;
+        for (let j = 1; j <= b.length; j++) {
+          current[j] = Math.min(
+            current[j - 1] + 1,
+            previous[j] + 1,
+            previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+          );
+          rowMinimum = Math.min(rowMinimum, current[j]);
         }
+        if (rowMinimum > 1) return 2;
+        previous = current;
       }
-
-      // Срезаем висячие предлоги
-      s = s.replace(/\s+/g, ' ').trim();
-      s = s.replace(/^(?:по|к|на|в|до|во)\s+/giu, '');
-      s = s.replace(/^[:;\s–—\-.,]+|[:;\s–—\-.,]+$/g, '').trim();
-
-      return s.length >= 2 ? s : rawText.trim();
+      return previous[b.length];
     }
 
     // Мастер-словарь предметов с регулярными выражениями
@@ -2526,150 +2714,257 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       { name: 'ОБЖ',             regex: /(?:^|[^\p{L}\p{N}])(обж)(?=[^\p{L}\p{N}]|$)/iu, clean: /(?:^|[^\p{L}\p{N}])(?:дз\s+по|задание\s+по|по|для)?\s*(?:обж)(?=[^\p{L}\p{N}]|$)/giu }
     ];
 
-    function parseTaskNaturalInput(text) {
-      if (!text || text.trim().length < 2) {
+    function parseTaskNaturalInput(text, { commit = false } = {}) {
+      const original = normalizeGluedTokens(text);
+      const isCommittedText = original.trim() === $('addText').dataset.parserCleaned;
+      if (original.trim().length < 2) {
         setDisplay('smartParseHint', false);
-        delete $('addSubj').dataset.userLocked;
-        delete $('addDay').dataset.userLocked;
-        delete $('addDue').dataset.userLocked;
-        delete $('addComp').dataset.userLocked;
-        delete $('addPrio').dataset.userLocked;
-        return;
+        return cleanTaskText(original);
       }
-      const low = ' ' + text.toLowerCase() + ' ';
+
+      let remaining = original;
       let detectedSubj = '';
+      let detectedSubjectCanonical = '';
       let detectedDay = '';
       let detectedDue = '';
       let detectedComp = '';
       let detectedPrio = '';
+      const changes = [];
 
-      // 1. Определение предмета по мастер-словарю
-      if (!$('addSubj').dataset.userLocked) {
-        for (const item of MASTER_SUBJECTS) {
-          if (item.regex.test(low)) {
-            detectedSubj = item.name;
-            break;
-          }
+      // Stage 1: rank exact and typo-tolerant subject candidates by context.
+      const normalizeSubject = value => value.toLocaleLowerCase('ru')
+        .replace(/ё/g, 'е')
+        .replace(/[^\p{L}\p{N}]/gu, '');
+      const subjectStems = {
+        'Литература': ['литература'],
+        'Алгебра': ['алгебра'],
+        'Геометрия': ['геометрия'],
+        'Математика': ['математика'],
+        'Физика': ['физика'],
+        'Физкультура': ['физкультура'],
+        'Химия': ['химия'],
+        'Биология': ['биология'],
+        'История': ['история'],
+        'Обществознание': ['обществознание'],
+        'Английский язык': ['английский'],
+        'Информатика': ['информатика'],
+        'География': ['география'],
+        'Технология': ['технология']
+      };
+      const subjectCandidates = [];
+      const addSubjectCandidate = (item, start, end, exact) => {
+        const prefix = remaining.slice(0, start);
+        const preceding = prefix.match(/(?:^|\s)(по|для|к|про|о|об|обо)\s*$/iu)?.[1]?.toLocaleLowerCase('ru') || '';
+        if (['про', 'о', 'об', 'обо'].includes(preceding)) return;
+        const atStart = !prefix.trim();
+        const priorityPreposition = ['по', 'для', 'к'].includes(preceding);
+        const score = priorityPreposition ? 5 : atStart ? 4 : exact ? 2 : 1;
+        subjectCandidates.push({ item, start, end, score, preceding });
+      };
+
+      for (const item of MASTER_SUBJECTS) {
+        const globalRegex = new RegExp(item.regex.source, `${item.regex.flags}g`);
+        for (const match of remaining.matchAll(globalRegex)) {
+          const subjectText = match[1] || match[0];
+          const start = match.index + match[0].indexOf(subjectText);
+          addSubjectCandidate(item, start, start + subjectText.length, true);
         }
+      }
 
-        // Ищем, есть ли найденный предмет в реальном расписании пользователя
-        if (detectedSubj) {
-          const sLow = detectedSubj.toLowerCase();
-      for (let d = 1; d <= 5; d++) {
-            const list = state.schedule[d] || [];
-            const found = list.find(l => l.toLowerCase().includes(sLow.slice(0, 4)));
-            if (found) {
-              detectedSubj = found;
-              detectedDay = String(d);
-              break;
-            }
+      const subjectTokens = /\p{L}+/gu;
+      for (const match of remaining.matchAll(subjectTokens)) {
+        const token = normalizeSubject(match[0]);
+        if (token.length < 5) continue;
+        for (const item of MASTER_SUBJECTS) {
+          const stems = subjectStems[item.name] || [];
+          if (stems.some(stem => levenshtein(token, normalizeSubject(stem)) <= 1)) {
+            addSubjectCandidate(item, match.index, match.index + match[0].length, false);
           }
         }
       }
 
-      // 2. Распознавание дат
-      if (!$('addDue').dataset.userLocked) {
-        const now = new Date();
-        const numDateMatch = low.match(/(?:^|[^\d])(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?=[^\d]|$)/);
-        if (numDateMatch) {
-          const day = parseInt(numDateMatch[1], 10);
-          const month = parseInt(numDateMatch[2], 10);
-          let year = numDateMatch[3] ? parseInt(numDateMatch[3], 10) : now.getFullYear();
-          if (year < 100) year += 2000;
-          const dObj = new Date(year, month - 1, day);
-          // Проверяем, что дата реально существует (месяц и день не съехали)
-          if (dObj.getFullYear() === year && dObj.getMonth() === month - 1 && dObj.getDate() === day) {
-            // Если год не был указан явно и дата уже прошла в этом году — переносим на следующий год
-            if (!numDateMatch[3] && getLocalToday(dObj) < getLocalToday(now)) {
-              dObj.setFullYear(year + 1);
-            }
-            detectedDue = getLocalToday(dObj);
+      subjectCandidates.sort((a, b) => b.score - a.score || a.start - b.start);
+      const subjectMatch = subjectCandidates[0];
+      if (subjectMatch) {
+        detectedSubj = subjectMatch.item.name;
+        detectedSubjectCanonical = subjectMatch.item.name;
+        let subjectStart = subjectMatch.start;
+        const prepositionMatch = remaining.slice(0, subjectStart).match(/(?:^|\s)(по|для|к)\s*$/iu);
+        if (prepositionMatch) subjectStart -= prepositionMatch[0].length;
+        remaining = `${remaining.slice(0, subjectStart)} ${remaining.slice(subjectMatch.end)}`;
+
+        const subjectKey = normalizeSubject(detectedSubj);
+        for (let day = 1; day <= 5 && !detectedDay; day++) {
+          const scheduled = (state.schedule[day] || []).find(name => {
+            const scheduledKey = normalizeSubject(name);
+            return scheduledKey === subjectKey ||
+              (scheduledKey.length >= 3 && subjectKey.startsWith(scheduledKey.slice(0, 3))) ||
+              (subjectKey.length >= 3 && scheduledKey.startsWith(subjectKey.slice(0, 3)));
+          });
+          if (scheduled) {
+            detectedSubj = scheduled;
+            detectedDay = String(day);
           }
-        } else if (low.includes('послезавтра')) {
-          const d = new Date(now); d.setDate(now.getDate() + 2);
-          detectedDue = getLocalToday(d);
-        } else if (low.includes('завтра')) {
-          const d = new Date(now); d.setDate(now.getDate() + 1);
-          detectedDue = getLocalToday(d);
-        } else if (low.includes('сегодня')) {
+        }
+      }
+
+      // Stage 2: extract and remove a due-date phrase.
+      const numericDateMatch = remaining.match(/(?:^|[^\p{L}\p{N}])(?:(?:к|на|до)\s+)?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?=[^\p{L}\p{N}]|$)/iu);
+      const namedDateMatch = remaining.match(/(?:^|[^\p{L}\p{N}])(?:(?:в|во|к|на|до)\s+)?(?:послезавтра|завтра|сегодня|(?:следующ\S*\s+)?(?:понедельник\S*|вторник\S*|сред\S*|четверг\S*|пятниц\S*|суббот\S*|воскресень\S*|выходны\S*))(?=[^\p{L}\p{N}]|$)/iu);
+      const now = new Date();
+      if (numericDateMatch) {
+        const day = Number(numericDateMatch[1]);
+        const month = Number(numericDateMatch[2]);
+        let year = numericDateMatch[3] ? Number(numericDateMatch[3]) : now.getFullYear();
+        if (year < 100) year += 2000;
+        const date = new Date(year, month - 1, day);
+        if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+          if (!numericDateMatch[3] && getLocalToday(date) < getLocalToday(now)) date.setFullYear(year + 1);
+          detectedDue = getLocalToday(date);
+          remaining = remaining.replace(numericDateMatch[0], ' ');
+        }
+      } else if (namedDateMatch) {
+        const phrase = namedDateMatch[0].toLocaleLowerCase('ru');
+        if (phrase.includes('послезавтра')) {
+          const date = new Date(now);
+          date.setDate(date.getDate() + 2);
+          detectedDue = getLocalToday(date);
+        } else if (phrase.includes('завтра')) {
+          const date = new Date(now);
+          date.setDate(date.getDate() + 1);
+          detectedDue = getLocalToday(date);
+        } else if (phrase.includes('сегодня')) {
           detectedDue = getLocalToday(now);
         } else {
-          const weekMap = { 'понедельник': 1, 'вторник': 2, 'сред': 3, 'четверг': 4, 'пятниц': 5, 'суббот': 1, 'выходны': 1 };
-          for (const [kw, dayNum] of Object.entries(weekMap)) {
-            if (low.includes(kw)) {
-              const curDay = now.getDay() || 7;
-              let diff = dayNum - curDay;
-              if (diff <= 0) diff += 7;
-              const target = new Date(now);
-              target.setDate(now.getDate() + diff);
-              detectedDue = getLocalToday(target);
-              detectedDay = String(dayNum);
-              break;
-            }
+          const weekdayPatterns = [
+            [/понедельник/u, 1], [/вторник/u, 2], [/сред/u, 3], [/четверг/u, 4],
+            [/пятниц/u, 5], [/суббот/u, 6], [/воскрес/u, 7], [/выходны/u, 6]
+          ];
+          const weekday = weekdayPatterns.find(([pattern]) => pattern.test(phrase));
+          if (weekday) {
+            const dayNumber = weekday[1];
+            const currentDay = now.getDay() || 7;
+            const date = new Date(now);
+            date.setDate(date.getDate() + ((dayNumber - currentDay + 7) % 7 || 7));
+            detectedDue = getLocalToday(date);
+            if (dayNumber <= 5) detectedDay = String(dayNumber);
           }
         }
-
-        if (!detectedDue && detectedSubj) {
-          const autoNext = getNextLessonDate(detectedSubj);
-          if (autoNext) detectedDue = autoNext;
-        }
+        if (detectedDue) remaining = remaining.replace(namedDateMatch[0], ' ');
       }
 
-      // 3. Сложность
-      if (!$('addComp').dataset.userLocked) {
-        if (/(проект|сочинен\S*|доклад\S*|презентац\S*|контрольн\S*|реферат\S*)/i.test(low)) {
-          detectedComp = 'hard';
-        } else if (/(?:номера|упр|задач)[^\d]*\d+[\s,]+\d+/i.test(low)) {
-          detectedComp = 'medium';
-        } else if (/(номер|упражнен\S*|параграф\S*|задач\S*|№|стр|страниц\S*)/i.test(low)) {
-          detectedComp = 'normal_comp';
-        } else if (/(устно|прочитать|выучить|повторить|стих\S*|правило)/i.test(low)) {
-          detectedComp = 'easy';
-        }
+      if (!detectedDue && detectedSubj) {
+        detectedDue = getNextLessonDate(detectedSubj);
       }
 
-      // 4. Срочность
-      if (!$('addPrio').dataset.userLocked) {
-        if (/(срочно|быстро|долг|горит|важно)/i.test(low)) detectedPrio = 'urgent';
+      // Stage 3: infer effort from action verbs and the assignment's exercise count.
+      const complexityRules = [
+        { value: 'easy', regex: /(?:прочитать|устно|повтор\S*|повт|принести|сдать|стр(?:аниц\S*)?)/iu },
+        { value: 'normal_comp', regex: /(?:номер\S*|№|упр\S*|задач\S*|сделать|решить|параграф\S*)/iu },
+        { value: 'medium', regex: /(?:выучить|стих\S*|правил\S*|перевод\S*)/iu },
+        { value: 'hard', regex: /(?:сочинен\S*|доклад\S*|проект\S*|конспект\S*|эссе|лаб[аы]?|лабораторн\S*|реферат\S*|презентац\S*)/iu }
+      ];
+      const numberPattern = /(?:№|номер\S*|упр\S*|упражнен\S*|задач\S*)\s*\.?\s*(\d+(?:\s*(?:,|и|&)\s*\d+)*)/giu;
+      const exerciseNumbers = new Set();
+      for (const match of remaining.matchAll(numberPattern)) {
+        for (const number of match[1].match(/\d+/g) || []) exerciseNumbers.add(number);
       }
+      const exerciseCount = exerciseNumbers.size;
+      const tiers = ['easy', 'normal_comp', 'medium', 'hard'];
+      let tier = -1;
+      complexityRules.forEach((rule, index) => {
+        if (rule.regex.test(remaining)) tier = Math.max(tier, index);
+      });
+      if (exerciseCount >= 2) tier = Math.max(tier, 2);
+      if (exerciseCount >= 4) tier = 3;
+      else if (exerciseCount >= 3 && tier >= 0) tier = Math.min(3, tier + 1);
+      if (tier === -1) {
+        const subjectKey = normalizeSubject(detectedSubjectCanonical || detectedSubj);
+        const stemSubjects = ['Алгебра', 'Геометрия', 'Физика', 'Химия', 'Информатика'];
+        const humanitiesSubjects = ['Литература', 'История', 'Обществознание', 'География', 'Биология'];
+        if (stemSubjects.some(subject => normalizeSubject(subject) === subjectKey)) tier = 2;
+        else if (humanitiesSubjects.some(subject => normalizeSubject(subject) === subjectKey)) tier = 0;
+        else tier = 1;
+      }
+      if (tier >= 0) detectedComp = tiers[tier];
+      if (/(срочно|быстро|долг|горит|важно)/iu.test(remaining)) detectedPrio = 'urgent';
 
-      // Применение к интерфейсу
-      const changes = [];
-      if (detectedDay && isDayEnabled(detectedDay) && !$('addDay').dataset.userLocked) {
-        $('addDay').value = detectedDay;
-      }
+      // Stage 4: normalize the concise action text without removing action verbs.
+      const cleaned = cleanTaskText(remaining);
+
       if (detectedSubj && !$('addSubj').dataset.userLocked) {
-        if (!isDayEnabled($('addDay').value)) $('addDay').value = '1';
-        fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, detectedSubj);
-        // Если предмета нет в выпадающем списке, переключаем на самостоятельно и вписываем
-        const existsInSelect = [...$('addSubj').options].some(o => o.value === detectedSubj);
-        if (!existsInSelect) {
-          $('addSubj').value = 'самостоятельно';
-          toggleOther($('addSubj'), $('addSubjOther'));
-          $('addSubjOther').value = detectedSubj;
+        const selectedDay = !$('addDay').dataset.userLocked && isDayEnabled(detectedDay)
+          ? detectedDay
+          : (isDayEnabled($('addDay').value) ? $('addDay').value : '1');
+        if (!$('addDay').dataset.userLocked) {
+          $('addDay').value = selectedDay;
+          $('addDay').dataset.parserAuto = '1';
         }
+        fillSubjects($('addSubj'), $('addSubjOther'), selectedDay, detectedSubj);
+        if (![...$('addSubj').options].some(option => option.value === detectedSubj)) {
+          $('addSubj').value = 'самостоятельно';
+          $('addSubjOther').value = detectedSubj;
+          toggleOther($('addSubj'), $('addSubjOther'));
+        }
+        $('addSubj').dataset.parserAuto = '1';
         changes.push(`предмет: ${detectedSubj}`);
-      } else if (detectedDay && isDayEnabled(detectedDay) && !$('addSubj').dataset.userLocked) {
-        fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+      } else {
+        if (detectedDay && isDayEnabled(detectedDay) && !$('addDay').dataset.userLocked) {
+          const dayChanged = $('addDay').value !== detectedDay;
+          $('addDay').value = detectedDay;
+          $('addDay').dataset.parserAuto = '1';
+          if (!$('addSubj').dataset.userLocked && dayChanged) {
+            fillSubjects($('addSubj'), $('addSubjOther'), detectedDay);
+            $('addSubj').dataset.parserAuto = '1';
+          }
+        }
+        if (!isCommittedText && !$('addSubj').dataset.userLocked && $('addSubj').dataset.parserAuto) {
+          delete $('addSubj').dataset.parserAuto;
+          const subjectDay = isDayEnabled($('addDay').value) ? $('addDay').value : '';
+          fillSubjects($('addSubj'), $('addSubjOther'), subjectDay);
+        }
+        if (!isCommittedText && !detectedDay && !$('addDay').dataset.userLocked && $('addDay').dataset.parserAuto) {
+          $('addDay').value = '';
+          delete $('addDay').dataset.parserAuto;
+          if (!$('addSubj').dataset.userLocked) {
+            fillSubjects($('addSubj'), $('addSubjOther'), '');
+            delete $('addSubj').dataset.parserAuto;
+          }
+        }
       }
 
       if (detectedDue && !$('addDue').dataset.userLocked) {
         $('addDue').value = detectedDue;
+        $('addDue').dataset.parserAuto = '1';
         changes.push(`срок: ${shortDate(detectedDue)}`);
+      } else if (!detectedDue && !isCommittedText && !$('addDue').dataset.userLocked && $('addDue').dataset.parserAuto) {
+        $('addDue').value = tomorrowStr();
+        delete $('addDue').dataset.parserAuto;
       }
+      if (!$('addComp').dataset.userLocked) setSegValue('addComp', detectedComp || 'normal_comp');
+      if (!$('addPrio').dataset.userLocked) setSegValue('addPrio', detectedPrio || 'important');
 
-      if (detectedComp && !$('addComp').dataset.userLocked) setSegValue('addComp', detectedComp);
-      if (detectedPrio && !$('addPrio').dataset.userLocked) setSegValue('addPrio', detectedPrio);
-
-      const curSubj = resolveSubj($('addSubj'), $('addSubjOther')) || detectedSubj;
-      const cleaned = cleanTaskText(text, curSubj);
       const hintEl = $('smartParseHint');
-      if (changes.length) {
-        hintEl.textContent = `распознано: ${changes.join(' · ')}${cleaned && cleaned !== text ? ` ➔ в задании: «${cleaned}»` : ''}`;
+      if (changes.length || detectedComp) {
+        const summary = [...changes];
+        if (detectedComp) summary.push(`сложность: ${COMP[detectedComp].short}`);
+        hintEl.textContent = `распознано: ${summary.join(' · ')}${cleaned && cleaned !== original.trim() ? ` ➔ в задании: «${cleaned}»` : ''}`;
         hintEl.style.display = 'block';
       } else {
         hintEl.style.display = 'none';
       }
+      if (commit && cleaned) {
+        $('addText').value = cleaned;
+        $('addText').dataset.parserCleaned = cleaned;
+      }
+      return cleaned || original.trim();
+    }
+
+    function applyDemoTask(text) {
+      const input = $('addText');
+      input.value = text;
+      input.value = parseTaskNaturalInput(text, { commit: true });
+      input.focus();
     }
 
     function normalizeSchedule(v) {
@@ -2692,13 +2987,18 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   const id = /^[A-Za-z0-9_-]{1,64}$/.test(rawId) ? rawId : newId();
   const day = ['1', '2', '3', '4', '5'].includes(String(t.day)) ? String(t.day) : '';
   const subj = String(t.subj || 'самостоятельно').trim().slice(0, 60);
-  const due = (typeof t.due === 'string' && t.due.trim()) ? t.due.trim() : '';
+  const rawDue = typeof t.due === 'string' ? t.due.trim() : '';
+  const due = isValidDate(rawDue) ? rawDue : '';
   const obj = {
     id, day, subj, text, due,
     prio: VALID_PRIO.includes(t.prio) ? t.prio : 'normal',
-    comp: VALID_COMP.includes(t.comp) ? t.comp : 'medium'
+    comp: VALID_COMP.includes(t.comp) ? t.comp : 'medium',
+    repeat: t.repeat === 'weekly' ? 'weekly' : null
   };
   if (t.closedAt) obj.closedAt = String(t.closedAt);
+  if (t.closedReason === 'completed' || t.closedReason === 'overdue') {
+    obj.closedReason = t.closedReason;
+  }
   return obj;
 }
 
@@ -2841,6 +3141,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function applyAppearance() {
       document.documentElement.setAttribute('data-theme', state.theme);
       document.body.classList.toggle('no-liquid', !state.liquid);
+      updateThemeFavicon();
     }
 
     // ---------- Навигация ----------
@@ -2877,6 +3178,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.tasks.forEach(t => {
         if (t.due && t.due < today) {
           t.closedAt = t.due;
+          t.closedReason = 'overdue';
           toArchive.push(t);
         } else {
           remaining.push(t);
@@ -2921,14 +3223,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const start = periodStartStr(state.period);
       const done = state.period === 'all'
         ? state.doneTotal
-        : state.archive.filter(a => a.closedAt && inPeriod(a.closedAt, start)).length;
+        : state.archive.filter(a => a.closedReason !== 'overdue' && a.closedAt && inPeriod(a.closedAt, start)).length;
       let focusMs = 0;
       const days = new Set();
       for (const [k, ms] of Object.entries(state.focus)) {
         if (ms > 0 && inPeriod(k, start)) { focusMs += ms; days.add(k); }
       }
       for (const a of state.archive) {
-        if (a.closedAt && inPeriod(a.closedAt, start)) days.add(a.closedAt);
+        if (a.closedReason !== 'overdue' && a.closedAt && inPeriod(a.closedAt, start)) days.add(a.closedAt);
       }
       const cells = [
         { label: 'выполнено', val: done, color: 'var(--success)' },
@@ -3169,13 +3471,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast('в плане уже 150 задач! завершите старые перед добавлением', '!');
         return;
       }
+      const text = parseTaskNaturalInput($('addText').value, { commit: true });
+      if (!text) { showToast('введите текст задания', '!'); return; }
       const day = $('addDay').value;
       if (!isDayEnabled(day)) { showToast('выберите день недели', '!'); return; }
       const subj = resolveSubj($('addSubj'), $('addSubjOther'));
       if (!subj) { showToast('укажите предмет', '!'); return; }
-      const textRaw = $('addText').value.trim();
-      if (!textRaw) { showToast('введите текст задания', '!'); return; }
-      const text = cleanTaskText(textRaw, subj) || textRaw;
       const rawDue = ($('addDue').value || '').trim();
       let validDue = '';
       if (rawDue) {
@@ -3200,12 +3501,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
       const task = normalizeTask({
         id: newId(), day, subj, text, due: validDue,
-        prio: activeSeg('addPrio'), comp: activeSeg('addComp')
+        prio: activeSeg('addPrio'), comp: activeSeg('addComp'),
+        repeat: $('addRepeat').checked ? 'weekly' : null
       });
       if (!task) { showToast('не удалось сохранить задание', '!'); return; }
       state.tasks.push(task);
       save();
       $('addText').value = '';
+      delete $('addText').dataset.parserCleaned;
+      $('addRepeat').checked = false;
       setDisplay('smartParseHint', false);
       $('addSubjOther').value = '';
       setSegValue('addPrio', 'important');
@@ -3304,6 +3608,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             <div class="task-meta">
               ${dBadge}
               <span title="${esc(COMP[t.comp].hint)}">${COMP[t.comp].text}</span>
+              ${t.repeat === 'weekly' ? '<span class="badge badge-info" title="повторяется каждую неделю">🔄 еженедельно</span>' : ''}
             </div>
             <div class="task-actions">
               <button class="btn-act btn-success" data-act="done" data-id="${id}" title="выполнить" aria-label="выполнить">готово</button>
@@ -3338,13 +3643,35 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const [item] = state.tasks.splice(idx, 1);
       const undoTask = { ...item };
       item.closedAt = getLocalToday();
+      item.closedReason = 'completed';
       state.archive.unshift(item);
+      let repeatTask = null;
+      if (item.repeat === 'weekly') {
+        const baseDate = isValidDate(item.due) ? item.due : getLocalToday();
+        const nextDueDate = new Date(`${baseDate}T00:00:00`);
+        nextDueDate.setDate(nextDueDate.getDate() + 7);
+        let nextId = newId();
+        while (state.tasks.some(task => task.id === nextId) || state.archive.some(task => task.id === nextId)) {
+          nextId = newId();
+        }
+        repeatTask = normalizeTask({
+          id: nextId,
+          subj: item.subj,
+          text: item.text,
+          day: item.day,
+          prio: item.prio,
+          comp: item.comp,
+          repeat: 'weekly',
+          due: getLocalToday(nextDueDate)
+        });
+        if (repeatTask) state.tasks.push(repeatTask);
+      }
       state.doneTotal += 1;
       save();
       confettiShoot();
       chime();
       if (!silent) {
-        showUndoToast('задание выполнено', { type: 'complete', task: undoTask, index: idx });
+        showUndoToast('задание выполнено', { type: 'complete', task: undoTask, index: idx, repeatTask });
       }
       renderAll();
     }
@@ -3378,6 +3705,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       fillSubjects($('editSubj'), $('editSubjOther'), t.day, t.subj);
       $('editText').value = t.text;
       $('editDue').value = t.due;
+      $('editRepeat').checked = t.repeat === 'weekly';
       // Кнопки critical в форме нет, поэтому запоминаем статус отдельно:
       // иначе при сохранении он молча превратится в «срочно».
       const editPrioGroup = $('editPrio');
@@ -3434,7 +3762,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         ? scoreToPrio(urgencyScore({ due: validDue, comp }))
         : activeSeg('editPrio');
       const fixed = normalizeTask({
-        id: state.tasks[idx].id, day, subj, text, due: validDue, prio, comp
+        id: state.tasks[idx].id, day, subj, text, due: validDue, prio, comp,
+        repeat: $('editRepeat').checked ? 'weekly' : null
       });
       if (!fixed) { showToast('не удалось сохранить изменения', '!'); return; }
       state.tasks[idx] = fixed;
@@ -3448,18 +3777,21 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function renderArchive() {
       const box = $('archiveList');
       if (!state.archive.length) {
-        box.innerHTML = '<div class="glass" style="text-align:center;padding:30px;color:var(--muted);"><div style="font-weight:800;font-size:15px;color:var(--text);">архив пуст</div><div>завершённые задания появятся здесь</div></div>';
+        box.innerHTML = '<div class="glass" style="text-align:center;padding:30px;color:var(--muted);"><div style="font-weight:800;font-size:15px;color:var(--text);">архив пуст</div><div>закрытые задания появятся здесь</div></div>';
         return;
       }
-      box.innerHTML = state.archive.map(a => `
-        <div class="glass task-card is-done">
+      box.innerHTML = state.archive.map(a => {
+        const isOverdueArchive = a.closedReason === 'overdue';
+        return `
+        <div class="glass task-card ${isOverdueArchive ? '' : 'is-done'}">
           <div style="display:flex;justify-content:space-between;gap:8px;">
             <span class="badge badge-prio">${esc(a.subj)}</span>
-            <span class="badge badge-done">выполнено</span>
+            <span class="badge ${isOverdueArchive ? 'badge-danger' : 'badge-done'}">${isOverdueArchive ? 'просрочено' : 'выполнено'}</span>
           </div>
-          <div style="font-size:14px;text-decoration:line-through;opacity:0.8;white-space:pre-wrap;">${esc(a.text)}</div>
-          <div style="font-size:11px;color:var(--muted);">закрыто: ${a.closedAt ? esc(a.closedAt) : '—'}</div>
-        </div>`).join('');
+          <div style="font-size:14px;${isOverdueArchive ? '' : 'text-decoration:line-through;'}opacity:0.8;white-space:pre-wrap;">${esc(a.text)}</div>
+          <div style="font-size:11px;color:var(--muted);">${isOverdueArchive ? 'срок' : 'закрыто'}: ${esc(isOverdueArchive ? (a.due || a.closedAt || '—') : (a.closedAt || '—'))}</div>
+        </div>`;
+      }).join('');
     }
 
     function clearArchive() {
@@ -3610,8 +3942,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     // ---------- Динамический Favicon и Title ----------
     let faviconEl = document.querySelector("link[rel*='icon']") || null;
-    const DEFAULT_FAVICON = faviconEl ? faviconEl.href : '';
+    let DEFAULT_FAVICON = faviconEl ? faviconEl.href : '';
     let faviconCanvas = null;
+
+    function updateThemeFavicon() {
+      if (!faviconEl) return;
+      const style = getComputedStyle(document.documentElement);
+      const accent = style.getPropertyValue('--accent').trim();
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="${accent}"/><text x="50" y="72" font-size="62" font-family="sans-serif" font-weight="bold" text-anchor="middle" fill="white">❖</text></svg>`;
+      DEFAULT_FAVICON = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+      faviconEl.href = DEFAULT_FAVICON;
+    }
 
     function updateDynamicFavicon(fraction, isBreak) {
       if (!faviconCanvas) {
@@ -3648,12 +3989,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       ctx.lineCap = 'round';
       ctx.stroke();
 
-      // Символ 'S' по центру
+      // Символ '❖' по центру
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 22px "Nunito Sans", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('S', cx, cy + 1);
+      ctx.fillText('❖', cx, cy + 1);
 
       if (faviconEl) {
         faviconEl.href = faviconCanvas.toDataURL('image/png');
@@ -4112,7 +4453,52 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const query = (tState.subj || (task ? task.subj : '')) + ' ' + (tState.taskText || (task ? task.text : ''));
       const routine = generateSmartRoutine(query, tState.cycle, tState.taskComp);
       breakPlan = routine.steps;
+      const routineLabel = $('smartBreakCard').querySelector(':scope > div:first-child > div > span:first-child');
+      if (routineLabel) routineLabel.textContent = routine.categoryName;
       loadBreakStep(0);
+    }
+
+    async function requestAICoachTip() {
+      const aiBtn = $('aiCoachBtn');
+      if (!aiBtn || aiBtn.disabled) return;
+      aiBtn.disabled = true;
+      aiBtn.textContent = '⏳ Думает...';
+      aiBtn.setAttribute('aria-busy', 'true');
+
+      const currentSubject = tState.subj || $('timerSubj')?.textContent || 'Учеба';
+      const currentTask = tState.taskText || $('timerTitle')?.textContent || 'Задание';
+      const requestCycle = tState.cycle;
+      const requestStep = breakStepIdx;
+      const requestTaskId = tState.id;
+      const hour = new Date().getHours();
+      const timeOfDay = hour < 12 ? 'утро' : hour < 17 ? 'день' : 'вечер';
+
+      try {
+        if (!sbClient) throw new Error('Supabase не подключен');
+        const { data, error } = await sbClient.functions.invoke('ai-coach', {
+          body: {
+            subject: currentSubject,
+            task: currentTask,
+            cycle: requestCycle,
+            time: timeOfDay
+          }
+        });
+        if (error) throw error;
+        if (typeof data?.tip !== 'string' || !data.tip.trim()) {
+          throw new Error('AI-тренер вернул пустой совет');
+        }
+        if (tState.phase === 'break' && tState.id === requestTaskId &&
+            tState.cycle === requestCycle && breakStepIdx === requestStep) {
+          $('stepDesc').textContent = data.tip.trim().slice(0, 1000);
+        }
+      } catch (err) {
+        console.error('Ошибка AI-тренера:', err);
+        showToast(`не удалось получить AI-совет: ${err?.message || 'ошибка запроса'}`, '!');
+      } finally {
+        aiBtn.disabled = false;
+        aiBtn.removeAttribute('aria-busy');
+        aiBtn.textContent = '✨ AI-совет (Nemotron)';
+      }
     }
 
     function loadBreakStep(idx) {
@@ -4294,9 +4680,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         schedule: state.schedule,
         tasks: state.tasks,
         archive: state.archive,
+        period: state.period,
         schoolStart: state.schoolStart,
         schoolEnd: state.schoolEnd,
-        haptic: state.haptic
+        haptic: state.haptic,
+        notif: state.notif,
+        welcomeShown: state.welcomeShown,
+        autoArchive: state.autoArchive
       };
       let url = '';
       try {
@@ -4325,6 +4715,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (VALID_THEMES.includes(d.theme)) state.theme = d.theme;
       if (typeof d.liquid === 'boolean') state.liquid = d.liquid;
       if (VALID_TABS.includes(d.start)) state.start = d.start;
+      if (VALID_PERIODS.includes(d.period)) state.period = d.period;
       state.work = clamp(toInt(d.work, state.work), 1, 180);
       state.rest = clamp(toInt(d.rest, state.rest), 1, 60);
       const dn = toInt(d.doneTotal, NaN);
@@ -4332,6 +4723,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (d.schoolStart) state.schoolStart = d.schoolStart;
       if (d.schoolEnd) state.schoolEnd = d.schoolEnd;
       if (typeof d.haptic === 'boolean') state.haptic = d.haptic;
+      if (typeof d.notif === 'boolean') state.notif = d.notif;
+      if (typeof d.welcomeShown === 'boolean') state.welcomeShown = d.welcomeShown;
+      if (typeof d.autoArchive === 'boolean') state.autoArchive = d.autoArchive;
       // Фильтр и день с прошлых данных могут не подходить новым, поэтому сбрасываем.
       state.filter = 'all';
       state.curDay = 1;
@@ -4340,6 +4734,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       setGroupActive(
         [...document.querySelectorAll('#filterChips .chip[data-f]')],
         document.querySelector('#filterChips .chip[data-f="all"]')
+      );
+      setGroupActive(
+        [...document.querySelectorAll('#periodChips .chip[data-p]')],
+        document.querySelector(`#periodChips .chip[data-p="${state.period}"]`)
       );
       applyAppearance();
       save();
@@ -4571,10 +4969,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         catch (err) { showToast('ошибка чтения json: файл повреждён', '!'); return; }
         if (!d || typeof d !== 'object' || Array.isArray(d)) { showToast('неверный формат файла', '!'); return; }
         // Поддержка как нового StudyFlow, так и всех старых бэкапов Eduplan
-        const hasValidSignature = 
-          d.signature === DATA_SIGNATURE || 
-          d.signature === 'EDUPLAN_BACKUP_V2_LIQUID_GLASS' || 
-          d.app === 'studyflow' || 
+        const hasValidSignature =
+          d.signature === DATA_SIGNATURE ||
+          d.signature === 'EDUPLAN_BACKUP_V2_LIQUID_GLASS' ||
+          d.app === 'studyflow' ||
           d.app === 'eduplan';
 
         if (!hasValidSignature) {
@@ -4641,15 +5039,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     let resetting = false;
     async function resetAll() {
-      importBackup = null;
-      setDisplay('btnUndoImport', false);
       if (!confirm('сбросить все данные? задания, расписание и архив будут удалены (включая копию в облаке)')) return;
       resetting = true;
       try {
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer = null;
+        cloudSyncGeneration += 1;
+        await cloudSyncPromise;
         if (sbClient) {
-          const { data: { user } } = await sbClient.auth.getUser();
+          const { data, error: authError } = await sbClient.auth.getUser();
+          if (authError) throw authError;
+          const user = data?.user;
           if (user) {
-            await sbClient.from('user_data').delete().eq('user_id', user.id);
+            const { error } = await sbClient.from('user_data').delete().eq('user_id', user.id);
+            if (error) throw error;
           }
         }
         const keys = [];
@@ -4657,8 +5060,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           const k = localStorage.key(i);
           if (k && k.startsWith('ep_')) keys.push(k);
         }
-        keys.forEach(removeRaw);
-      } catch (e) {}
+        keys.forEach(key => localStorage.removeItem(key));
+      } catch (err) {
+        resetting = false;
+        console.error('ошибка сброса данных:', err);
+        setSyncStatus('error');
+        showToast('не удалось полностью сбросить данные: ' + (err?.message || 'ошибка хранилища'), '!');
+        return;
+      }
+      importBackup = null;
+      setDisplay('btnUndoImport', false);
       location.reload();
     }
 
@@ -4677,6 +5088,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       $('addForm').addEventListener('submit', addTask);
       $('editForm').addEventListener('submit', saveEditTask);
+      $('aiCoachBtn').addEventListener('click', requestAICoachTip);
 
       $('addDay').addEventListener('change', () => fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value));
       $('addSubj').addEventListener('change', () => {
@@ -4686,23 +5098,26 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           const autoDue = getNextLessonDate(subj);
           if (autoDue && (!$('addDue').value || $('addDue').value === tomorrowStr())) {
             $('addDue').value = autoDue;
+            $('addDue').dataset.parserAuto = '1';
           }
         }
       });
       $('addText').addEventListener('input', e => parseTaskNaturalInput(e.target.value));
-      $('addText').addEventListener('blur', e => {
-        const subj = resolveSubj($('addSubj'), $('addSubjOther'));
-        const cleaned = cleanTaskText(e.target.value, subj);
-        if (cleaned && cleaned !== e.target.value) {
-          e.target.value = cleaned;
-          parseTaskNaturalInput(cleaned);
-        }
-      });
+      $('addText').addEventListener('blur', e => parseTaskNaturalInput(e.target.value, { commit: true }));
 
       // Защита ручного выбора: помечаем заблокированными при изменении
-      $('addSubj').addEventListener('change', () => { $('addSubj').dataset.userLocked = '1'; });
-      $('addDay').addEventListener('change', () => { $('addDay').dataset.userLocked = '1'; });
-      $('addDue').addEventListener('change', () => { $('addDue').dataset.userLocked = '1'; });
+      $('addSubj').addEventListener('change', () => {
+        $('addSubj').dataset.userLocked = '1';
+        delete $('addSubj').dataset.parserAuto;
+      });
+      $('addDay').addEventListener('change', () => {
+        $('addDay').dataset.userLocked = '1';
+        delete $('addDay').dataset.parserAuto;
+      });
+      $('addDue').addEventListener('change', () => {
+        $('addDue').dataset.userLocked = '1';
+        delete $('addDue').dataset.parserAuto;
+      });
       document.querySelectorAll('#addPrio .seg-btn').forEach(b => b.addEventListener('click', () => { $('addPrio').dataset.userLocked = '1'; }));
       document.querySelectorAll('#addComp .seg-btn').forEach(b => b.addEventListener('click', () => { $('addComp').dataset.userLocked = '1'; }));
       $('editDay').addEventListener('change', () => fillSubjects($('editSubj'), $('editSubjOther'), $('editDay').value));
@@ -5031,12 +5446,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     <div class="glass modal-box" style="max-width: 520px;">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <svg class="sf-icon-svg" width="24" height="24" viewBox="0 0 100 100" fill="none">
-            <path d="M36 28 C22 28 16 38 16 48 C16 62 30 68 48 74 C64 80 74 86 74 92 C74 98 62 102 48 102" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"/>
-            <path d="M64 72 C78 72 84 62 84 52 C84 38 70 32 52 26 C36 20 26 14 26 8 C26 2 38 -2 52 -2" stroke="var(--accent)" stroke-width="12" stroke-linecap="round"/>
-            <circle cx="34" cy="47" r="6" fill="var(--sf-flow-1)"/>
-          </svg>
-          <span style="font-weight: 800; font-size: 17px; color: var(--text);">добро пожаловать в studyflow</span>
+          <span style="font-size: 20px; color: var(--accent); filter: drop-shadow(0 0 6px var(--glow));">❖</span>
+          <span style="font-family: 'Nunito Sans', sans-serif; font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -0.3px;">добро пожаловать в <span class="welcome-wordmark">studyflow</span></span>
         </div>
       </div>
       <div class="modal-body" style="padding-top: 14px;">
