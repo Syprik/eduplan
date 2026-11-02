@@ -726,6 +726,33 @@
       display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
       font-size: 11.5px; color: var(--muted); opacity: 0.85;
     }
+    .task-subtasks {
+      display: grid; gap: 6px; padding: 8px 10px;
+      border-radius: 10px; background: var(--card-sub);
+    }
+    .task-subtask {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; line-height: 1.4; color: var(--muted);
+    }
+    .task-subtask input { margin: 2px 0 0; accent-color: var(--success); }
+    .task-subtask.is-done span { text-decoration: line-through; opacity: 0.7; }
+    .ai-inline-spinner {
+      display: inline-block; width: 10px; height: 10px; margin-right: 4px;
+      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+      vertical-align: -1px; animation: aiInlineSpin 0.7s linear infinite;
+    }
+    @keyframes aiInlineSpin { to { transform: rotate(360deg); } }
+    .ai-day-review {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 14px; margin-bottom: 12px;
+    }
+    .ai-day-review-content { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; }
+    body.ai-disabled #batchAiChip,
+    body.ai-disabled #btnRefreshAI,
+    body.ai-disabled .task-subtasks,
+    body.ai-disabled [data-act="decompose"] {
+      display: none !important;
+    }
     .task-actions {
       display: flex; justify-content: flex-end; gap: 8px;
       flex-wrap: wrap;
@@ -1075,6 +1102,23 @@
     @keyframes breakCardPulse {
       0%, 100% { box-shadow: 0 0 0 rgba(142, 97, 255, 0); }
       50% { box-shadow: 0 0 22px rgba(142, 97, 255, 0.22); }
+    }
+    @keyframes breakStepFadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #stepTitle, #stepDesc {
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+    #stepTitle.fade, #stepDesc.fade {
+      animation: breakStepFadeIn 0.15s ease-out;
+    }
+    .refresh-spin {
+      animation: refreshRotate 0.6s linear;
+    }
+    @keyframes refreshRotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
     }
     @media (max-height: 740px), (max-width: 420px) {
       #timerView.is-break .timer-circle { display: none !important; }
@@ -1460,6 +1504,7 @@
             <button type="button" class="chip" onclick="applyDemoTask('завтра алгебра №45 и 46')">⚡ алгебра на завтра</button>
             <button type="button" class="chip" onclick="applyDemoTask('в пятницу история доклад')">📖 доклад по истории</button>
             <button type="button" class="chip" onclick="applyDemoTask('к понедельнику литература прочитать стр 120')">☕ литература устно</button>
+            <button type="button" class="chip chip-action" id="batchAiChip" onclick="openBatchAiModal()">✨ вставить текст из чата</button>
           </div>
           <div class="form-group">
             <label class="label" for="addText">содержание задания:</label>
@@ -1587,11 +1632,12 @@
       </div>
       <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-weight:700;font-size:13px;" id="hapticLabel">виброотклик</div>
-          <div style="font-size:11px;color:var(--muted);">тактильная отдача при нажатии на кнопки</div>
+          <div style="font-weight:700;font-size:13px;" id="aiDisabledLabel">отключить AI-функции</div>
+          <div style="font-size:11px;color:var(--muted);">скрыть AI-инструменты и использовать локальные разминки</div>
         </div>
-        <input type="checkbox" id="setHaptic" onchange="toggleHaptic(this.checked)" aria-labelledby="hapticLabel" style="width:20px;height:20px;accent-color:var(--accent);">
+        <input type="checkbox" id="setAIDisabled" onchange="toggleAIFeaturesDisabled(this.checked)" aria-labelledby="aiDisabledLabel" style="width:20px;height:20px;accent-color:var(--accent);">
       </div>
+
       <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-weight:700;font-size:13px;">автоархивация старых задач</div>
@@ -1740,6 +1786,23 @@
           <label for="editRepeat" style="font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;">повторять каждую неделю</label>
         </div>
         <button type="submit" class="btn-main">сохранить изменения</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ИМПОРТ ЗАДАНИЙ ИЗ ЧАТА -->
+  <div class="modal-overlay" id="batchAiModal">
+    <div class="glass modal-box" role="dialog" aria-modal="true" aria-labelledby="batchAiTitle">
+      <div class="modal-header">
+        <span id="batchAiTitle" style="font-weight:800;font-size:15px;">задания из чата</span>
+        <button type="button" class="icon-btn" onclick="closeBatchAiModal()" aria-label="закрыть" style="width:30px;height:30px;">✕</button>
+      </div>
+      <form id="batchAiForm" class="modal-body" style="padding-top:16px;">
+        <div class="form-group">
+          <label class="label" for="batchAiText">вставьте сообщения или расшифровку голосового:</label>
+          <textarea id="batchAiText" class="input" rows="7" maxlength="12000" placeholder="Например: к пятнице сдать задачи по алгебре, завтра прочитать главу по истории..." required></textarea>
+        </div>
+        <button type="submit" class="btn-main" id="batchAiSubmit">найти задания ✨</button>
       </form>
     </div>
   </div>
@@ -1973,6 +2036,7 @@
           if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
           if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen !== 'false';
           if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
+          if (c.ep_ai_disabled !== undefined) state.aiDisabled = c.ep_ai_disabled === 'true';
           if (c.ep_school_start) state.schoolStart = c.ep_school_start;
           if (c.ep_school_end) state.schoolEnd = c.ep_school_end;
 
@@ -1987,7 +2051,6 @@
           }
 
           // Полный цикл обновления визуала
-      state.haptic = readRaw('ep_haptic') !== 'false';
       updateDaysConfig();
           applyAppearance();
           renderAll();
@@ -2141,7 +2204,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     // ---------- Состояние ----------
     let state = {
       theme: 'dark', liquid: true, start: 'overview',
-      haptic: true,
+      aiDisabled: false,
       schoolStart: '08:00', schoolEnd: '13:15',
       work: 25, rest: 5, curDay: 1, filter: 'all', period: 'day',
       doneTotal: 0,            // сколько задач выполнено всего (не зависит от очистки архива)
@@ -2159,53 +2222,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     // ---------- Утилиты ----------
-    function haptic(type = 'light') {
-      if (!state.haptic) return;
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const vibrationPatterns = {
-        light: 20,
-        medium: 40,
-        success: [15, 45, 20],
-        warning: [40, 50, 40],
-        error: [40, 50, 40]
-      };
-      try {
-        if (!isIOS && typeof navigator.vibrate === 'function') {
-          navigator.vibrate(vibrationPatterns[type] || vibrationPatterns.light);
-          return;
-        }
-
-        const ctx = getAudio();
-        if (!ctx) return;
-        const frequency = type === 'warning' || type === 'error' ? 160
-          : type === 'medium' ? 260
-          : 320;
-        const impulses = type === 'success' ? [0, 0.07] : [0];
-        for (const offset of impulses) {
-          const start = ctx.currentTime + offset;
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(frequency, start);
-          gain.gain.setValueAtTime(0.08, start);
-          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.025);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(start);
-          osc.stop(start + 0.03);
-        }
-      } catch (err) {
-        console.warn('не удалось воспроизвести тактильный отклик:', err);
-      }
-    }
-
-    function toggleHaptic(en) {
-      state.haptic = Boolean(en);
-      save();
-      if (en) haptic('medium');
-      showToast(en ? 'виброотклик включен' : 'виброотклик выключен');
-    }
-
     function getLocalToday(d = new Date()) {
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
@@ -2623,7 +2639,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         ep_notif: String(state.notif),
         ep_welcomescreen: String(state.welcomeShown),
         ep_autoarchive: String(state.autoArchive),
-        ep_haptic: String(state.haptic),
+        ep_ai_disabled: String(state.aiDisabled),
         ep_school_start: state.schoolStart,
         ep_school_end: state.schoolEnd,
         ep_focus: JSON.stringify(state.focus),
@@ -3049,6 +3065,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     comp: VALID_COMP.includes(t.comp) ? t.comp : 'medium',
     repeat: t.repeat === 'weekly' ? 'weekly' : null
   };
+  if (Array.isArray(t.subtasks)) {
+    obj.subtasks = t.subtasks
+      .filter(item => item && typeof item === 'object' && typeof item.text === 'string')
+      .map(item => ({ text: item.text.trim().slice(0, 500), done: item.done === true }))
+      .filter(item => item.text)
+      .slice(0, 30);
+  }
   if (t.closedAt) obj.closedAt = String(t.closedAt);
   if (t.closedReason === 'completed' || t.closedReason === 'overdue') {
     obj.closedReason = t.closedReason;
@@ -3106,7 +3129,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.notif = readRaw('ep_notif') === 'true';
       state.welcomeShown = readRaw('ep_welcomescreen') !== 'false';
       state.autoArchive = readRaw('ep_autoarchive') !== 'false';
-      state.haptic = readRaw('ep_haptic') !== 'false';
+      state.aiDisabled = readRaw('ep_ai_disabled') === 'true';
       const sStart = readRaw('ep_school_start'); if (sStart) state.schoolStart = sStart;
       const sEnd = readRaw('ep_school_end'); if (sEnd) state.schoolEnd = sEnd;
       updateDaysConfig();
@@ -3205,7 +3228,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         || document.querySelectorAll('.nav-btn')[Math.max(0, VALID_TABS.indexOf(name))];
     }
     function tab(name, btn) {
-      haptic('light');
+
       if (!VALID_TABS.includes(name)) name = 'overview';
       const target = $(`view-${name}`);
       if (!target) return;
@@ -3519,6 +3542,61 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!due.value || !isValidDate(due.value) || due.value < getLocalToday()) due.value = tomorrowStr();
     }
 
+    let batchAiPending = false;
+    function openBatchAiModal() {
+      if (state.aiDisabled || batchAiPending) return;
+      $('batchAiText').value = '';
+      showModal($('batchAiModal'), $('batchAiText'));
+    }
+
+    function closeBatchAiModal() {
+      if (!batchAiPending) hideModal($('batchAiModal'));
+    }
+
+    async function importBatchAiTasks(e) {
+      e.preventDefault();
+      if (state.aiDisabled || batchAiPending) return;
+      const rawText = $('batchAiText').value.trim();
+      if (!rawText) { showToast('вставьте текст с заданиями', '!'); return; }
+      if (!sbClient || !navigator.onLine) { showToast('AI-разбор недоступен офлайн', '!'); return; }
+      const submit = $('batchAiSubmit');
+      const originalLabel = 'найти задания ✨';
+      batchAiPending = true;
+      submit.disabled = true;
+      submit.innerHTML = '<span class="ai-inline-spinner" aria-hidden="true"></span>разбираем текст';
+      try {
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: { action: 'parse_raw', rawText: rawText, today: getLocalToday() }
+        });
+        if (result.error) throw result.error;
+        if (state.aiDisabled) return;
+        if (!result.data || !Array.isArray(result.data.tasks)) throw new Error('AI вернул некорректный список заданий');
+        const tasks = result.data.tasks.map(rawTask => {
+          if (!rawTask || typeof rawTask !== 'object' || Array.isArray(rawTask)) return null;
+          let id = newId();
+          while (state.tasks.some(task => task.id === id) || state.archive.some(task => task.id === id)) id = newId();
+          return normalizeTask(Object.assign({}, rawTask, { id: id, repeat: null }));
+        }).filter(Boolean);
+        if (!tasks.length) throw new Error('в тексте не найдено заданий');
+        if (tasks.length > 150 - state.tasks.length) throw new Error('в плане недостаточно места для всех найденных заданий');
+        state.tasks.push(...tasks);
+        save();
+        renderAll();
+        $('batchAiText').value = '';
+        batchAiPending = false;
+        hideModal($('batchAiModal'));
+        tab('tasks', navBtn('tasks'));
+        showToast('добавлено задач: ' + tasks.length);
+      } catch (error) {
+        console.error('ошибка разбора текста с заданиями:', error);
+        showToast(error && error.message || 'не удалось разобрать текст', '!');
+      } finally {
+        batchAiPending = false;
+        submit.disabled = false;
+        submit.textContent = originalLabel;
+      }
+    }
+
     function addTask(e) {
       e.preventDefault();
       if (state.tasks.length >= 150) {
@@ -3587,6 +3665,56 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       renderTasks();
     }
 
+    const decomposingTaskIds = new Set();
+    async function decomposeTask(id, button) {
+      const task = state.tasks.find(item => item.id === id);
+      if (state.aiDisabled || !task || decomposingTaskIds.has(id)) return;
+      if (!sbClient || !navigator.onLine) {
+        showToast('AI-разбивка недоступна офлайн', '!');
+        return;
+      }
+      decomposingTaskIds.add(id);
+      if (button) {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.innerHTML = '<span class="ai-inline-spinner" aria-hidden="true"></span>шаги';
+      }
+      try {
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: { action: 'decompose', subject: task.subj, task: task.text }
+        });
+        if (state.aiDisabled) return;
+        if (result.error) throw result.error;
+        const subtasks = Array.isArray(result.data && result.data.subtasks)
+          ? result.data.subtasks.map(item => typeof item === 'string' ? { text: item, done: false } : item)
+            .filter(item => item && typeof item.text === 'string' && item.text.trim())
+            .map(item => ({ text: item.text.trim().slice(0, 500), done: item.done === true }))
+            .slice(0, 30)
+          : [];
+        if (!subtasks.length) throw new Error('AI не вернул шаги для задания');
+        const currentTask = state.tasks.find(item => item.id === id);
+        if (!currentTask) return;
+        currentTask.subtasks = subtasks;
+        save();
+        showToast('шаги задания готовы');
+      } catch (error) {
+        console.error('ошибка AI-разбивки задания:', error);
+        showToast(error && error.message || 'не удалось разбить задание на шаги', '!');
+      } finally {
+        decomposingTaskIds.delete(id);
+        renderTasks();
+      }
+    }
+
+    function toggleTaskSubtask(input) {
+      const task = state.tasks.find(item => item.id === input.dataset.id);
+      const index = Number(input.dataset.subtaskIndex);
+      if (!task || !Array.isArray(task.subtasks) || !Number.isInteger(index) || !task.subtasks[index]) return;
+      task.subtasks[index].done = input.checked;
+      save();
+      renderTasks();
+    }
+
     function renderTasks() {
       const today = getLocalToday();
       $('taskBadge').textContent = state.tasks.length;
@@ -3649,6 +3777,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           : `<span class="badge badge-info">${datePrefix} · ${esc(left)}</span>`;
         const id = esc(t.id);
         const isActive = timerIsActive() && tState.id === t.id;
+        const isDecomposing = decomposingTaskIds.has(t.id);
+        const subtasksHtml = !state.aiDisabled && Array.isArray(t.subtasks) && t.subtasks.length
+          ? '<div class="task-subtasks" aria-label="шаги задания">' + t.subtasks.map((item, subtaskIndex) =>
+              '<label class="task-subtask' + (item.done ? ' is-done' : '') + '">' +
+              '<input type="checkbox" data-act="toggle-subtask" data-id="' + id + '" data-subtask-index="' + subtaskIndex + '"' + (item.done ? ' checked' : '') + ' aria-label="' + (item.done ? 'отметить шаг невыполненным' : 'отметить шаг выполненным') + '">' +
+              '<span>' + esc(item.text) + '</span></label>'
+            ).join('') + '</div>'
+          : '';
+        const decomposeButton = state.aiDisabled ? '' : '<button class="btn-act" data-act="decompose" data-id="' + id + '" title="Разбить на шаги"' + (isDecomposing ? ' disabled aria-busy="true"' : '') + '>' +
+          (isDecomposing ? '<span class="ai-inline-spinner" aria-hidden="true"></span>шаги' : '✨ шаги') + '</button>';
         const taskCard = `
           <div class="glass task-card ${PRIO[t.prio].c}"${isActive ? ' data-active="1"' : ''}>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -3671,6 +3809,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
               <button class="btn-act btn-danger" data-act="del" data-id="${id}" title="удалить" aria-label="удалить">удалить</button>
             </div>
           </div>`;
+        const editActionAnchor = '              <button class="btn-act" data-act="edit"';
+        const editActionIndex = taskCard.indexOf(editActionAnchor);
+        const taskCardWithActions = taskCard.slice(0, editActionIndex) + decomposeButton + '\n' + taskCard.slice(editActionIndex);
+        const taskCardWithSubtasks = taskCardWithActions.replace('            <div class="task-meta">', subtasksHtml + '            <div class="task-meta">');
         const nextComp = list[index + 1]?.comp || t.comp || 'medium';
         const breakCard = index < list.length - 1 && index % 2 === 0
           ? `<div class="break-card">
@@ -3681,12 +3823,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
               <button class="btn-act btn-success" onclick="startStandaloneBreak('${nextComp}')">размяться</button>
             </div>`
           : '';
-        return taskCard + breakCard;
+        return taskCardWithSubtasks + breakCard;
       }).join('');
     }
 
     function completeTaskById(id, silent = false) {
-      haptic('success');
+
       if (!id) return;
       const idx = state.tasks.findIndex(task => task.id === id);
       if (idx === -1) {
@@ -3716,7 +3858,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           prio: item.prio,
           comp: item.comp,
           repeat: 'weekly',
-          due: getLocalToday(nextDueDate)
+          due: getLocalToday(nextDueDate),
+          subtasks: Array.isArray(item.subtasks) ? item.subtasks.map(subtask => ({ text: subtask.text, done: false })) : undefined
         });
         if (repeatTask) state.tasks.push(repeatTask);
       }
@@ -3817,7 +3960,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         : activeSeg('editPrio');
       const fixed = normalizeTask({
         id: state.tasks[idx].id, day, subj, text, due: validDue, prio, comp,
-        repeat: $('editRepeat').checked ? 'weekly' : null
+        repeat: $('editRepeat').checked ? 'weekly' : null,
+        subtasks: state.tasks[idx].subtasks
       });
       if (!fixed) { showToast('не удалось сохранить изменения', '!'); return; }
       state.tasks[idx] = fixed;
@@ -4160,7 +4304,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function toggleTimer() {
       if (!timerIsActive()) return;
-      haptic('medium');
+
       if (tState.running) {
         syncTimer();
         tState.running = false;
@@ -4183,8 +4327,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function collapseTimer() {
       const v = $('timerView');
       if (!v.classList.contains('active') || v.classList.contains('is-collapsing')) return;
-      
-      haptic('medium');
+
       tState.minimized = true;
       hidePhaseModal();
       keepAwake(false);
@@ -4213,7 +4356,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function expandTimer() {
       tState.minimized = false;
       hideIsland();
-      haptic('medium');
+
 
       const v = $('timerView');
       v.classList.remove('mini');
@@ -4303,7 +4446,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function toggleIslandExpand(e) {
-      haptic('light');
+
       if (e.target.closest('.island-btn')) return;
       const toast = $('toast');
       const willExpand = !toast.classList.contains('is-expanded');
@@ -4557,12 +4700,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     async function fetchAIBreakPlan() {
+      if (state.aiDisabled) throw new Error('AI-функции отключены');
       if (!sbClient || !navigator.onLine) throw new Error('AI-тренер недоступен');
       let timeoutId;
       try {
         const { data, error } = await Promise.race([
           sbClient.functions.invoke('ai-coach', {
             body: {
+              action: 'break',
               subject: tState.subj || 'Учеба',
               task: tState.taskText || 'Задание',
               cycle: tState.cycle || 1,
@@ -4604,19 +4749,29 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function initBreakRoutine() {
       const requestId = ++breakRoutineRequestId;
-      breakRoutineLoading = true;
+      breakRoutineLoading = false;
       breakRoutineComplete = false;
       breakStepIdx = 0;
       breakStepLeftMs = 0;
       breakStepTotalMs = 0;
       breakPlan = [];
       breakPlanGeneratedByAI = false;
-      showBreakLoadingState();
-      updateBreakUI();
 
       const task = tState.id ? state.tasks.find(x => x.id === tState.id) : null;
       const query = (tState.subj || (task ? task.subj : '')) + ' ' + (tState.taskText || (task ? task.text : ''));
       const routine = generateSmartRoutine(query, tState.cycle, tState.taskComp);
+      if (state.aiDisabled) {
+        breakPlan = routine.steps;
+        $('breakCategory').textContent = routine.categoryName;
+        updateBreakUI();
+        loadBreakStep(0);
+        startBreakCountdown(requestId);
+        return;
+      }
+      breakRoutineLoading = true;
+      showBreakLoadingState();
+      updateBreakUI();
+
       void (async () => {
         let plan = { steps: routine.steps, categoryName: routine.categoryName, isAI: false };
         try {
@@ -4641,12 +4796,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     async function requestAICoachTip() {
       const refreshBtn = $('btnRefreshAI');
-      if (!refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
+      if (state.aiDisabled || !refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
       refreshBtn.disabled = true;
+      refreshBtn.classList.add('refresh-spin');
       const requestId = ++breakRoutineRequestId;
       try {
         const plan = await fetchAIBreakPlan();
-        if (requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
+        if (state.aiDisabled || requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
         breakPlan = plan.steps;
         breakPlanGeneratedByAI = true;
         $('breakCategory').textContent = '✨ AI: ' + plan.categoryName;
@@ -4656,7 +4812,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         console.warn('AI break plan refresh fallback:', err);
         showToast('Не удалось обновить комплекс, оставляем текущий план', '!');
       } finally {
-        if (requestId === breakRoutineRequestId) refreshBtn.disabled = false;
+        if (requestId === breakRoutineRequestId) {
+          refreshBtn.disabled = false;
+          refreshBtn.classList.remove('refresh-spin');
+        }
       }
     }
 
@@ -4691,7 +4850,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       setDisplay('smartBreakCard', isBreak);
       if (!isBreak) return;
 
-      if (breakRoutineLoading) {
+      if (breakRoutineLoading && !state.aiDisabled) {
         showBreakLoadingState();
         return;
       }
@@ -4706,37 +4865,52 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         $('stepTimer').textContent = '✓';
         $('breakStepProg').style.width = '100%';
         setDisplay('breakStepAction', false);
-        $('btnRefreshAI').disabled = false;
+        if (!$('btnRefreshAI').disabled) $('btnRefreshAI').disabled = false;
         return;
       }
 
       const cur = breakPlan[breakStepIdx];
       if (!cur) return;
       $('breakStepBadge').textContent = (breakStepIdx + 1) + ' / ' + breakPlan.length;
+
+      // Fade-in: убираем класс, forcing reflow, добавляем обратно
+      const stepTitleEl = $('stepTitle');
+      const stepDescEl = $('stepDesc');
+      stepTitleEl.classList.remove('fade');
+      stepDescEl.classList.remove('fade');
+      void stepTitleEl.offsetWidth; // reflow
+      stepTitleEl.classList.add('fade');
+      stepDescEl.classList.add('fade');
+
+      // Скрываем AI-индикатор если AI отключён или план локальный
       const sourceIndicator = $('breakAIIndicator');
-      const sourceLabel = breakPlanGeneratedByAI ? 'упражнение создано AI' : 'офлайн-подсказка';
-      const sourceColor = breakPlanGeneratedByAI ? '#ff5b64' : 'var(--success)';
-      const sourceGlow = breakPlanGeneratedByAI
-        ? '0 0 6px rgba(255,91,100,0.55)'
-        : '0 0 6px rgba(6,214,160,0.55)';
-      sourceIndicator.style.display = 'inline-block';
-      sourceIndicator.style.background = sourceColor;
-      sourceIndicator.style.boxShadow = sourceGlow;
-      sourceIndicator.setAttribute('aria-label', sourceLabel);
-      sourceIndicator.title = sourceLabel;
-      $('stepTitle').textContent = cur.title;
-      $('stepDesc').textContent = cur.desc;
+      if (state.aiDisabled || !breakPlanGeneratedByAI) {
+        sourceIndicator.style.display = 'none';
+      } else {
+        sourceIndicator.style.display = 'inline-block';
+        sourceIndicator.style.background = '#ff5b64';
+        sourceIndicator.style.boxShadow = '0 0 6px rgba(255,91,100,0.55)';
+        sourceIndicator.setAttribute('aria-label', 'упражнение создано AI');
+        sourceIndicator.title = 'упражнение создано AI';
+      }
+
+      stepTitleEl.textContent = cur.title;
+      stepDescEl.textContent = cur.desc;
       const seconds = Math.ceil(breakStepLeftMs / 1000);
       $('stepTimer').textContent = Math.floor(seconds / 60) + ':' + pad(seconds % 60);
       $('breakStepProg').style.width = (breakStepTotalMs
         ? Math.round(((breakStepTotalMs - breakStepLeftMs) / breakStepTotalMs) * 100)
         : 0) + '%';
-      $('breakStepAction').textContent = breakStepIdx < breakPlan.length - 1
-        ? 'следующее упражнение ➔'
-        : 'завершить разминку ✓';
+
+      // Динамический текст кнопки: на последнем шаге — «завершить разминку ✓»
+      const isLastStep = breakStepIdx + 1 >= breakPlan.length;
+      const actionBtn = $('breakStepAction');
+      actionBtn.textContent = isLastStep
+        ? 'завершить разминку ✓'
+        : 'следующее упражнение ➔';
       setDisplay('breakStepAction', true);
-      $('breakStepAction').disabled = false;
-      $('btnRefreshAI').disabled = false;
+      actionBtn.disabled = false;
+      if (!$('btnRefreshAI').disabled) $('btnRefreshAI').disabled = false;
     }
 
     // Вернулись на вкладку: сверяем отсчёт и заново берём блокировку экрана.
@@ -4765,12 +4939,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('autoTimeSettings').style.display = state.start === 'auto' ? 'flex' : 'none';
       if ($('setNotif')) $('setNotif').checked = state.notif;
       if ($('setShowWelcome')) $('setShowWelcome').checked = state.welcomeShown;
-      if ($('setHaptic')) $('setHaptic').checked = state.haptic;
+      if ($('setAIDisabled')) $('setAIDisabled').checked = state.aiDisabled;
+      updateAIFeatureVisibility();
       if ($('setAutoArchive')) $('setAutoArchive').checked = state.autoArchive;
       setDisplay('btnUndoImport', !!importBackup);
     }
     function openSettings() {
-      haptic('light');
+
       fillSettings();
       showModal($('setModal'), $('setTheme'));
     }
@@ -4839,6 +5014,22 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       applyAppearance();
       save();
     }
+    function updateAIFeatureVisibility() {
+      document.body.classList.toggle('ai-disabled', state.aiDisabled);
+    }
+
+    function toggleAIFeaturesDisabled(disabled) {
+      state.aiDisabled = Boolean(disabled);
+      updateAIFeatureVisibility();
+      save();
+      renderTasks();
+      if (state.aiDisabled) {
+        if ($('batchAiModal').classList.contains('active')) hideModal($('batchAiModal'));
+        if (tState.phase === 'break' && tState.id && (breakRoutineLoading || breakPlanGeneratedByAI)) initBreakRoutine();
+      }
+      showToast(state.aiDisabled ? 'AI-функции отключены' : 'AI-функции включены');
+    }
+
     function toggleLiquid(en) {
       state.liquid = Boolean(en);
       applyAppearance();
@@ -4875,10 +5066,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         period: state.period,
         schoolStart: state.schoolStart,
         schoolEnd: state.schoolEnd,
-        haptic: state.haptic,
         notif: state.notif,
         welcomeShown: state.welcomeShown,
-        autoArchive: state.autoArchive
+        autoArchive: state.autoArchive,
+        aiDisabled: state.aiDisabled
       };
       let url = '';
       try {
@@ -4914,10 +5105,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.doneTotal = Math.max(Number.isFinite(dn) ? Math.max(0, dn) : state.archive.length, state.archive.length);
       if (d.schoolStart) state.schoolStart = d.schoolStart;
       if (d.schoolEnd) state.schoolEnd = d.schoolEnd;
-      if (typeof d.haptic === 'boolean') state.haptic = d.haptic;
       if (typeof d.notif === 'boolean') state.notif = d.notif;
       if (typeof d.welcomeShown === 'boolean') state.welcomeShown = d.welcomeShown;
       if (typeof d.autoArchive === 'boolean') state.autoArchive = d.autoArchive;
+      if (typeof d.aiDisabled === 'boolean') state.aiDisabled = d.aiDisabled;
       // Фильтр и день с прошлых данных могут не подходить новым, поэтому сбрасываем.
       state.filter = 'all';
       state.curDay = 1;
@@ -5271,7 +5462,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       document.addEventListener('click', e => {
         const b = e.target.closest('.seg .seg-btn');
         if (b && b.parentElement) {
-          haptic('light');
+
           // Пользователь выбрал приоритет вручную — «очень срочно» больше не подставляем.
           delete b.parentElement.dataset.keepCritical;
           setGroupActive([...b.parentElement.querySelectorAll('.seg-btn')], b);
@@ -5279,6 +5470,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       });
 
       $('addForm').addEventListener('submit', addTask);
+      $('batchAiForm').addEventListener('submit', importBatchAiTasks);
+      $('batchAiModal').addEventListener('click', e => {
+        if (e.target === $('batchAiModal')) closeBatchAiModal();
+      });
       $('editForm').addEventListener('submit', saveEditTask);
 
       $('addDay').addEventListener('change', () => fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value));
@@ -5331,9 +5526,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         if (!b) return;
         const id = b.dataset.id;
         if (b.dataset.act === 'focus') openTimer(id);
+        else if (b.dataset.act === 'decompose') decomposeTask(id, b);
         else if (b.dataset.act === 'done') completeTaskById(id);
         else if (b.dataset.act === 'edit') openEdit(id);
         else if (b.dataset.act === 'del') delTask(id);
+      });
+
+      $('tasksList').addEventListener('change', e => {
+        const input = e.target.closest('input[data-act="toggle-subtask"]');
+        if (input) toggleTaskSubtask(input);
       });
 
       $('setSchoolStart').addEventListener('change', e => {
@@ -5548,6 +5749,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function init() {
       initSupabase();
       load();
+      updateAIFeatureVisibility();
       applyAppearance();
       bindEvents();
       initMiniDrag();
