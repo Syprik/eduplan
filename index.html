@@ -800,6 +800,14 @@
     .btn-act.btn-danger { color: var(--danger); }
     .btn-act:disabled { opacity: 0.5; cursor: default; }
     .ai-coach-btn { width: 100%; margin-top: 10px; }
+    .ai-sparkle {
+      display: inline-block;
+      animation: pulseSparkle 2.2s infinite ease-in-out;
+    }
+    @keyframes pulseSparkle {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px var(--accent)); }
+      50% { transform: scale(1.2); filter: drop-shadow(0 0 6px var(--accent)); }
+    }
 
     .bottom-dock {
       position: fixed; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%;
@@ -963,6 +971,13 @@
         filter 0.28s ease,
         border-radius 0.35s cubic-bezier(0.22, 1, 0.36, 1);
     }
+    #timerView {
+      height: 100dvh;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
     .timer-view.active { display: flex; }
 
     .timer-view.is-collapsing {
@@ -1026,6 +1041,49 @@
     .timer-view.mini .timer-mini-hide { display: none !important; }
     .timer-view.mini .timer-mini-show { display: flex !important; }
     .timer-mini-show { display: none; }
+    #timerView.is-break #timerContent {
+      justify-content: flex-start;
+      padding-bottom: 10px;
+    }
+    #timerView.is-break .timer-circle { display: none !important; }
+    #timerView.is-break #timerCompactBar {
+      display: block !important;
+      order: 3;
+      flex: 0 0 auto;
+      margin: auto auto 12px !important;
+    }
+    #timerView.is-break #smartBreakCard {
+      order: 4;
+      flex: 0 0 auto;
+      max-height: none;
+      margin: 0 auto !important;
+    }
+    #timerView.is-break #timerControls {
+      gap: 8px;
+      margin-top: 8px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    #smartBreakCard {
+      flex: 1 1 auto;
+      max-height: 320px;
+      overflow: hidden;
+    }
+    #smartBreakCard.is-loading {
+      animation: breakCardPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes breakCardPulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(142, 97, 255, 0); }
+      50% { box-shadow: 0 0 22px rgba(142, 97, 255, 0.22); }
+    }
+    @media (max-height: 740px), (max-width: 420px) {
+      #timerView.is-break .timer-circle { display: none !important; }
+      #timerView.is-break #timerCompactBar {
+        display: block !important;
+        margin: auto auto 12px !important;
+      }
+      #timerView.is-break #smartBreakCard { max-height: none; }
+    }
 
     .mini-row { display: flex; align-items: center; gap: 10px; }
     .mini-time {
@@ -1701,14 +1759,11 @@
       <div class="mini-bar"><i id="miniBar"></i></div>
     </div>
 
-    <div class="timer-mini-hide" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-      <span class="badge badge-info" id="timerCycle">цикл 1</span>
-      <div style="display: flex; gap: 6px;">
-        <button class="icon-btn" onclick="collapseTimer()" aria-label="свернуть таймер" title="свернуть">—</button>
-        <button class="icon-btn" onclick="abortTimer()" aria-label="выйти из таймера" title="выйти">✕</button>
-      </div>
+    <div class="timer-mini-hide" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+      <button class="icon-btn" onclick="collapseTimer()" aria-label="свернуть таймер" title="свернуть">—</button>
+      <button class="icon-btn" onclick="abortTimer()" aria-label="выйти из таймера" title="выйти">✕</button>
     </div>
-    <div class="timer-mini-hide" style="text-align: center; flex-direction: column;">
+    <div class="timer-mini-hide" id="timerContent" style="display:flex; flex:1 1 auto; min-height:0; overflow-y:auto; text-align:center; flex-direction:column;">
       <div style="font-size: 13px; font-weight: 800; color: var(--accent); letter-spacing: 1px;" id="timerSubj">предмет</div>
       <div style="font-size: 20px; font-weight: 800; margin: 6px 0;" id="timerTitle">задание</div>
       <div class="timer-circle">
@@ -1722,44 +1777,41 @@
           <span class="badge" style="background: rgba(142,97,255,0.2); color: var(--accent); margin-top: 4px;" id="timerPhase">фаза работы</span>
         </div>
       </div>
-      <div id="smartBreakCard" class="glass-card" style="display:none; margin: 12px auto 0; max-width: 420px; width: 100%; text-align: left; padding: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 11px; font-weight: 800; color: var(--success); text-transform: uppercase; letter-spacing: 0.5px;">умная разминка</span>
-            <span class="badge" id="breakStepBadge" style="background: rgba(6,214,160,0.15); color: var(--success); font-size: 10px;">шаг 1 из 3</span>
-          </div>
-          <button type="button" class="btn-act" id="btnToggleChill" onclick="toggleChillMode()" style="font-size: 11px; padding: 4px 8px;">просто отдых</button>
+      <div class="timer-compact-bar" id="timerCompactBar" style="display: none;">
+        <div class="compact-time-row" style="display: flex; justify-content: center; align-items: baseline; gap: 8px; margin-bottom: 6px;">
+          <span class="timer-digits" id="compactDigits" style="font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums;">05:00</span>
+          <span class="badge" style="background: rgba(6, 214, 160, 0.15); color: var(--success); font-size: 11px;">фаза отдыха</span>
         </div>
-
-        <div id="breakActiveStep" style="display: flex; align-items: center; gap: 12px; margin: 10px 0;">
-          <div style="flex: 1; min-width: 0;">
-            <div id="stepTitle" style="font-weight: 800; font-size: 14px; color: var(--text);">правило 20-20-20</div>
-            <div id="stepDesc" style="font-size: 11.5px; color: var(--muted); line-height: 1.35; margin-top: 2px;">посмотри в окно на самый дальний объект</div>
-          </div>
-          <div id="stepTimer" style="font-variant-numeric: tabular-nums; font-weight: 800; font-size: 16px; color: var(--success); flex-shrink: 0;">0:25</div>
-        </div>
-        <button type="button" id="aiCoachBtn" class="btn-act btn-go ai-coach-btn">✨ AI-совет (Nemotron)</button>
-
-        <div class="prog-bg" style="height: 4px; margin-top: 8px;">
-          <div class="prog-fill" id="breakStepProg" style="background: var(--success); box-shadow: 0 0 10px rgba(6,214,160,0.4); width: 0%;"></div>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-          <button type="button" class="btn-act" onclick="nextBreakStep(true)" style="font-size: 11px; color: var(--muted);">пропустить шаг ➔</button>
+        <div class="prog-bg" style="height: 5px; max-width: 380px; margin: 0 auto; background: var(--track); border-radius: 999px; overflow: hidden;">
+          <div class="prog-fill" id="compactBarFill" style="height: 100%; width: 100%; background: var(--success); transition: width 0.5s linear;"></div>
         </div>
       </div>
-
-      <div id="chillBreakNotice" class="glass-card" style="display:none; margin: 12px auto 0; max-width: 420px; width: 100%; text-align: center; padding: 12px;">
-        <span style="font-size: 12px; color: var(--muted);">режим свободного отдыха без упражнений</span>
-        <button type="button" class="btn-act" onclick="toggleChillMode()" style="font-size: 11px; margin-left: 8px;">включить разминку</button>
+      <div id="smartBreakCard" class="glass-card" style="display:none; position:relative; overflow:hidden; padding:16px 18px 12px; margin:8px auto 0; max-width:420px; width:100%; text-align:left;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;">
+          <div id="stepTitle" style="font-weight:800; font-size:16px; color:var(--text); line-height:1.2;">Загрузка...</div>
+          <div id="stepTimer" style="font-variant-numeric:tabular-nums; font-weight:800; font-size:13px; color:var(--success); background:rgba(6,214,160,0.15); padding:3px 10px; border-radius:999px; flex-shrink:0;">0:00</div>
+        </div>
+        <div id="stepDesc" style="font-size:13px; color:var(--muted); line-height:1.45; min-height:54px; margin-bottom:10px;"></div>
+        <button type="button" class="btn-main btn-success" id="breakStepAction" onclick="nextBreakStep(true)" style="width:100%; margin:0 0 12px;">следующее упражнение ➔</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding-top:8px; border-top:1px solid var(--border);">
+          <span id="breakCategory" style="font-weight:800; color:var(--accent); letter-spacing:0.3px;">✨ AI • Загрузка...</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="breakStepBadge" style="color:var(--muted); font-weight:700;">1 / 3</span>
+            <span id="breakAIIndicator" role="img" aria-label="упражнение создано AI" title="упражнение создано AI" style="display:none; width:6px; height:6px; border-radius:50%; background:#ff5b64; box-shadow:0 0 6px rgba(255,91,100,0.55);"></span>
+            <button type="button" id="btnRefreshAI" onclick="requestAICoachTip()" title="перегенерировать разминку" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 2px;">↻</button>
+          </div>
+        </div>
+        <div id="breakStepProgressContainer" style="position:absolute; bottom:0; left:0; width:100%; height:3px; background:var(--track);">
+          <div class="prog-fill" id="breakStepProg" style="height:100%; width:0%; background:var(--success); transition:width 0.5s linear;"></div>
+        </div>
       </div>
     </div>
-    <div class="timer-mini-hide" style="flex-direction: column; gap: 8px; width: 100%;">
+    <div class="timer-mini-hide" id="timerControls" style="display:flex; flex-direction:column; gap:8px; width:100%;">
       <div id="timerMainBtns">
         <button class="btn-main" id="timerToggleBtn" onclick="toggleTimer()">пауза</button>
         <button class="btn-main btn-success" id="timerFinishBtn" onclick="finishTask()">завершить задачу</button>
       </div>
-      <button class="btn-act" id="btnSkipBreak" onclick="skipBreak()" style="width: 100%; padding: 12px; display: none;">закончить отдых</button>
+      <button class="btn-act" id="btnSkipBreak" onclick="skipBreak()" style="background:none; border:none; color:var(--muted); font-size:12px; text-decoration:underline; width:100%; padding:8px; margin-top:4px; display:none;">закончить отдых досрочно</button>
     </div>
 
     <div class="modal-overlay" id="timerPhaseModal" style="background: rgba(0,0,0,0.8);">
@@ -1999,7 +2051,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   if (cycleNumber < 2) {
     categoryName = isEvening ? 'цикл 1: вечерняя перезагрузка зрения' : 'цикл 1: зрительная перезагрузка';
     steps = [
-      { title: 'правило 20-20-20', desc: 'на 20 секунд переведи взгляд на объект примерно в 6 метрах или дальше и спокойно поморгай', dur: 20 }
+      { title: 'правило 20-20-20', desc: 'на 20 секунд переведи взгляд на объект примерно в 6 метрах или дальше и спокойно поморгай', dur: 25 },
+      { title: 'сбрось напряжение в плечах', desc: 'мягко наклони голову к каждому плечу, затем сделай несколько плавных кругов плечами', dur: 30 },
+      { title: 'дыхание и вода', desc: 'сделай глоток воды и один спокойный глубокий вдох-выдох', dur: 25 }
     ];
   } else if (cycleNumber < 3) {
     if (mediumType === 'письмо') {
@@ -3811,7 +3865,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let breakStepIdx = 0;
     let breakStepLeftMs = 0;
     let breakStepTotalMs = 0;
-    let breakChillMode = false;
+    let breakRoutineComplete = false;
+    let breakRoutineLoading = false;
+    let breakRoutineRequestId = 0;
+    let breakPlanGeneratedByAI = false;
     let timerDigitsHidden = false;
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
@@ -3828,21 +3885,57 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.leftMs = Math.max(0, tState.endAt - now);
     }
 
+    function setBreakTimerControlsDisabled(disabled) {
+      ['timerToggleBtn', 'miniToggle', 'islandToggleBtn'].forEach(id => {
+        const control = $(id);
+        if (control) control.disabled = disabled;
+      });
+    }
+
     function startPhase(phase, sec) {
       stopInterval();
+      if (phase !== 'break') {
+        breakRoutineRequestId += 1;
+        breakRoutineLoading = false;
+      }
       const now = Date.now();
       tState.phase = phase;
       tState.totalMs = sec * 1000;
       tState.leftMs = tState.totalMs;
       tState.endAt = now + tState.leftMs;
       tState.lastTs = now;
-      tState.running = true;
-      timerInt = setInterval(tick, 500);
-      if (phase === 'break') initBreakRoutine();
+      tState.running = phase !== 'break';
+      if (phase === 'break') {
+        initBreakRoutine();
+      } else {
+        timerInt = setInterval(tick, 500);
+      }
       updatePhaseUI();
       updateTimerUI();
+      if (phase === 'break') {
+        setTimerBtn(false);
+        $('timerToggleBtn').textContent = 'подготовка...';
+        setBreakTimerControlsDisabled(true);
+      } else {
+        setTimerBtn(true);
+      }
+      keepAwake(phase !== 'break');
+      save();
+    }
+
+    function startBreakCountdown(requestId) {
+      if (requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
+      breakRoutineLoading = false;
+      const now = Date.now();
+      tState.running = true;
+      tState.lastTs = now;
+      tState.endAt = now + tState.leftMs;
+      stopInterval();
+      timerInt = setInterval(tick, 500);
+      setBreakTimerControlsDisabled(false);
       setTimerBtn(true);
       keepAwake(true);
+      updateTimerUI();
       save();
     }
 
@@ -3850,7 +3943,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!tState.running) return;
       syncTimer();
       if (tState.leftMs <= 0) { onPhaseEnd(); return; }
-      if (tState.phase === 'break' && !breakChillMode && tState.running) {
+      if (tState.phase === 'break' && !breakRoutineComplete && tState.running) {
         breakStepLeftMs -= 500;
         if (breakStepLeftMs <= 0) {
           beep(620, 0.15);
@@ -3865,13 +3958,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function onPhaseEnd() {
       stopInterval();
+      breakRoutineLoading = false;
+      breakRoutineRequestId += 1;
       tState.running = false;
       tState.leftMs = 0;
       breakPlan = [];
       breakStepIdx = 0;
       breakStepLeftMs = 0;
       breakStepTotalMs = 0;
-      breakChillMode = false;
       updateTimerUI();
       setTimerBtn(false);
       save();
@@ -3931,7 +4025,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function updatePhaseUI() {
       const isBreak = tState.phase === 'break';
-      $('timerCycle').textContent = `цикл ${tState.cycle}`;
+      $('timerView').classList.toggle('is-break', isBreak);
       $('timerPhase').textContent = isBreak ? 'фаза отдыха' : 'фаза работы';
       $('timerPhase').style.color = isBreak ? 'var(--success)' : 'var(--accent)';
       $('timerBar').style.stroke = isBreak ? 'var(--success)' : 'var(--accent)';
@@ -4018,6 +4112,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         d.textContent = timerDigitsHidden ? '····' : timeTxt;
       }
       const frac = tState.totalMs ? tState.leftMs / tState.totalMs : 0;
+      const compactBar = $('timerCompactBar');
+      if (compactBar && getComputedStyle(compactBar).display !== 'none') {
+        $('compactDigits').textContent = timerDigitsHidden ? '····' : timeTxt;
+        $('compactBarFill').style.width = `${frac * 100}%`;
+      }
       $('timerBar').style.strokeDashoffset = (1 - frac) * CIRC;
       updateMiniUI();
       if (tState.minimized) updateIslandUI();
@@ -4069,7 +4168,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         save();
         setTimerBtn(false);
         keepAwake(false);
-      } else if (tState.leftMs > 0 && (timerIsActive() || Boolean(tState.minimized))) {
+      } else if (!breakRoutineLoading && tState.leftMs > 0 && (timerIsActive() || Boolean(tState.minimized))) {
         tState.running = true;
         tState.lastTs = Date.now();
         tState.endAt = tState.lastTs + tState.leftMs;
@@ -4303,7 +4402,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       breakStepIdx = 0;
       breakStepLeftMs = 0;
       breakStepTotalMs = 0;
-      breakChillMode = false;
       timerDigitsHidden = false;
       if ($('btnHideTimerDigits')) $('btnHideTimerDigits').textContent = 'скрыть';
       tState = { 
@@ -4346,7 +4444,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function startStandaloneBreak(comp = 'normal_comp') {
       if (timerIsActive()) { showToast('сначала завершите текущую фокус-сессию', 'i'); return; }
       breakPlan = [];
-      breakChillMode = false;
       tState = { id: null, subj: 'перерыв', taskText: 'разминка', phase: 'break', cycle: 1, taskComp: comp, totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
       $('timerSubj').textContent = 'перерыв';
       $('timerTitle').textContent = 'разминка';
@@ -4359,7 +4456,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function startWorkAgain() {
       hidePhaseModal();
       breakPlan = [];
-      breakChillMode = false;
       tState.cycle += 1;
       const workMins = COMP[tState.taskComp]?.t || state.work;
       startPhase('work', workMins * 60);
@@ -4367,20 +4463,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function add5Min() {
       hidePhaseModal();
       breakPlan = [];
-      breakChillMode = false;
       startPhase('work', 5 * 60);
     }
     function skipBreak() {
       if (tState.phase !== 'break') return;
       syncTimer();
       stopInterval();
+      breakRoutineLoading = false;
+      breakRoutineRequestId += 1;
       tState.running = false;
       tState.leftMs = 0;
       breakPlan = [];
       breakStepIdx = 0;
       breakStepLeftMs = 0;
       breakStepTotalMs = 0;
-      breakChillMode = false;
       updateTimerUI();
       setTimerBtn(false);
       save();
@@ -4397,6 +4493,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function closeTimerView() {
       syncTimer();
       stopInterval();
+      breakRoutineLoading = false;
+      breakRoutineRequestId += 1;
       tState.running = false;
       tState.minimized = false;
       tState.id = null;
@@ -4446,67 +4544,129 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     // ---------- Умная разминка ----------
+    function validateBreakSteps(steps) {
+      return Array.isArray(steps)
+        ? steps.filter(step =>
+          step &&
+          typeof step.title === 'string' &&
+          typeof step.desc === 'string' &&
+          Number.isFinite(step.dur) &&
+          step.dur > 0
+        )
+        : [];
+    }
+
+    async function fetchAIBreakPlan() {
+      if (!sbClient || !navigator.onLine) throw new Error('AI-тренер недоступен');
+      let timeoutId;
+      try {
+        const { data, error } = await Promise.race([
+          sbClient.functions.invoke('ai-coach', {
+            body: {
+              subject: tState.subj || 'Учеба',
+              task: tState.taskText || 'Задание',
+              cycle: tState.cycle || 1,
+              time: new Date().getHours() < 17 ? 'день' : 'вечер',
+              breakMinutes: getBreakDurationMinutes(tState.taskComp)
+            }
+          }),
+          new Promise((_, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('AI-план не получен за 3.5 секунды')), 3500);
+          })
+        ]);
+        if (error) throw error;
+        const steps = validateBreakSteps(data?.steps);
+        if (steps.length < 2) throw new Error('AI вернул некорректный план');
+        return {
+          steps,
+          categoryName: typeof data.categoryName === 'string' && data.categoryName.trim()
+            ? data.categoryName.trim()
+            : 'Персональный план'
+        };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function showBreakLoadingState() {
+      const card = $('smartBreakCard');
+      if (card) card.classList.add('is-loading');
+      $('stepTitle').textContent = '✨ AI-тренер подбирает комплекс...';
+      $('stepDesc').textContent = 'Анализируем предмет, нагрузку и время суток для составления упражнений.';
+      $('stepTimer').textContent = '⏳';
+      $('breakCategory').textContent = '✨ AI • Загрузка...';
+      $('breakStepBadge').textContent = '';
+      $('breakAIIndicator').style.display = 'none';
+      $('breakStepProg').style.width = '0%';
+      $('breakStepAction').style.display = 'none';
+      $('btnRefreshAI').disabled = true;
+    }
+
     function initBreakRoutine() {
-      breakChillMode = false;
+      const requestId = ++breakRoutineRequestId;
+      breakRoutineLoading = true;
+      breakRoutineComplete = false;
       breakStepIdx = 0;
+      breakStepLeftMs = 0;
+      breakStepTotalMs = 0;
+      breakPlan = [];
+      breakPlanGeneratedByAI = false;
+      showBreakLoadingState();
+      updateBreakUI();
+
       const task = tState.id ? state.tasks.find(x => x.id === tState.id) : null;
       const query = (tState.subj || (task ? task.subj : '')) + ' ' + (tState.taskText || (task ? task.text : ''));
       const routine = generateSmartRoutine(query, tState.cycle, tState.taskComp);
-      breakPlan = routine.steps;
-      const routineLabel = $('smartBreakCard').querySelector(':scope > div:first-child > div > span:first-child');
-      if (routineLabel) routineLabel.textContent = routine.categoryName;
-      loadBreakStep(0);
+      void (async () => {
+        let plan = { steps: routine.steps, categoryName: routine.categoryName, isAI: false };
+        try {
+          const aiPlan = await fetchAIBreakPlan();
+          plan = { ...aiPlan, isAI: true };
+        } catch (err) {
+          if (requestId !== breakRoutineRequestId) return;
+          console.warn('AI break routine fallback:', err);
+        }
+        if (requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
+
+        breakPlan = plan.steps;
+        breakPlanGeneratedByAI = plan.isAI;
+        $('breakCategory').textContent = plan.isAI ? '✨ AI: ' + plan.categoryName : plan.categoryName;
+        breakRoutineLoading = false;
+        const card = $('smartBreakCard');
+        if (card) card.classList.remove('is-loading');
+        loadBreakStep(0);
+        startBreakCountdown(requestId);
+      })();
     }
 
     async function requestAICoachTip() {
-      const aiBtn = $('aiCoachBtn');
-      if (!aiBtn || aiBtn.disabled) return;
-      aiBtn.disabled = true;
-      aiBtn.textContent = '⏳ Думает...';
-      aiBtn.setAttribute('aria-busy', 'true');
-
-      const currentSubject = tState.subj || $('timerSubj')?.textContent || 'Учеба';
-      const currentTask = tState.taskText || $('timerTitle')?.textContent || 'Задание';
-      const requestCycle = tState.cycle;
-      const requestStep = breakStepIdx;
-      const requestTaskId = tState.id;
-      const hour = new Date().getHours();
-      const timeOfDay = hour < 12 ? 'утро' : hour < 17 ? 'день' : 'вечер';
-
+      const refreshBtn = $('btnRefreshAI');
+      if (!refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
+      refreshBtn.disabled = true;
+      const requestId = ++breakRoutineRequestId;
       try {
-        if (!sbClient) throw new Error('Supabase не подключен');
-        const { data, error } = await sbClient.functions.invoke('ai-coach', {
-          body: {
-            subject: currentSubject,
-            task: currentTask,
-            cycle: requestCycle,
-            time: timeOfDay
-          }
-        });
-        if (error) throw error;
-        if (typeof data?.tip !== 'string' || !data.tip.trim()) {
-          throw new Error('AI-тренер вернул пустой совет');
-        }
-        if (tState.phase === 'break' && tState.id === requestTaskId &&
-            tState.cycle === requestCycle && breakStepIdx === requestStep) {
-          $('stepDesc').textContent = data.tip.trim().slice(0, 1000);
-        }
+        const plan = await fetchAIBreakPlan();
+        if (requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
+        breakPlan = plan.steps;
+        breakPlanGeneratedByAI = true;
+        $('breakCategory').textContent = '✨ AI: ' + plan.categoryName;
+        loadBreakStep(0);
       } catch (err) {
-        console.error('Ошибка AI-тренера:', err);
-        showToast(`не удалось получить AI-совет: ${err?.message || 'ошибка запроса'}`, '!');
+        if (requestId !== breakRoutineRequestId) return;
+        console.warn('AI break plan refresh fallback:', err);
+        showToast('Не удалось обновить комплекс, оставляем текущий план', '!');
       } finally {
-        aiBtn.disabled = false;
-        aiBtn.removeAttribute('aria-busy');
-        aiBtn.textContent = '✨ AI-совет (Nemotron)';
+        if (requestId === breakRoutineRequestId) refreshBtn.disabled = false;
       }
     }
 
     function loadBreakStep(idx) {
       if (!breakPlan.length || idx >= breakPlan.length) {
-        breakChillMode = true;
+        breakRoutineComplete = true;
         updateBreakUI();
         return;
       }
+      breakRoutineComplete = false;
       breakStepIdx = idx;
       const cur = breakPlan[idx];
       breakStepTotalMs = cur.dur * 1000;
@@ -4515,36 +4675,68 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function nextBreakStep(manual = false) {
+      if (breakRoutineLoading || breakRoutineComplete) return;
       if (manual) beep(440, 0.1);
-      if (breakStepIdx + 1 < breakPlan.length) {
-        loadBreakStep(breakStepIdx + 1);
-      } else {
-        breakChillMode = true;
+      if (breakStepIdx + 1 >= breakPlan.length) {
+        breakStepLeftMs = 0;
+        breakRoutineComplete = true;
         updateBreakUI();
+      } else {
+        loadBreakStep(breakStepIdx + 1);
       }
-    }
-
-    function toggleChillMode() {
-      breakChillMode = !breakChillMode;
-      if (!breakChillMode && !breakPlan.length) initBreakRoutine();
-      updateBreakUI();
     }
 
     function updateBreakUI() {
       const isBreak = tState.phase === 'break';
-      setDisplay('smartBreakCard', isBreak && !breakChillMode);
-      setDisplay('chillBreakNotice', isBreak && breakChillMode);
-      if (!isBreak || breakChillMode) return;
+      setDisplay('smartBreakCard', isBreak);
+      if (!isBreak) return;
+
+      if (breakRoutineLoading) {
+        showBreakLoadingState();
+        return;
+      }
+
+      const card = $('smartBreakCard');
+      if (card) card.classList.remove('is-loading');
+      if (breakRoutineComplete) {
+        $('breakStepBadge').textContent = 'готово';
+        $('breakAIIndicator').style.display = 'none';
+        $('stepTitle').textContent = '🎉 Отличная работа!';
+        $('stepDesc').textContent = 'Активная разминка завершена. Сделай глоток воды и спокойно отдохни оставшееся время.';
+        $('stepTimer').textContent = '✓';
+        $('breakStepProg').style.width = '100%';
+        setDisplay('breakStepAction', false);
+        $('btnRefreshAI').disabled = false;
+        return;
+      }
 
       const cur = breakPlan[breakStepIdx];
       if (!cur) return;
-      $('breakStepBadge').textContent = `шаг ${breakStepIdx + 1} из ${breakPlan.length}`;
+      $('breakStepBadge').textContent = (breakStepIdx + 1) + ' / ' + breakPlan.length;
+      const sourceIndicator = $('breakAIIndicator');
+      const sourceLabel = breakPlanGeneratedByAI ? 'упражнение создано AI' : 'офлайн-подсказка';
+      const sourceColor = breakPlanGeneratedByAI ? '#ff5b64' : 'var(--success)';
+      const sourceGlow = breakPlanGeneratedByAI
+        ? '0 0 6px rgba(255,91,100,0.55)'
+        : '0 0 6px rgba(6,214,160,0.55)';
+      sourceIndicator.style.display = 'inline-block';
+      sourceIndicator.style.background = sourceColor;
+      sourceIndicator.style.boxShadow = sourceGlow;
+      sourceIndicator.setAttribute('aria-label', sourceLabel);
+      sourceIndicator.title = sourceLabel;
       $('stepTitle').textContent = cur.title;
       $('stepDesc').textContent = cur.desc;
-      const s = Math.ceil(breakStepLeftMs / 1000);
-      $('stepTimer').textContent = `0:${pad(s)}`;
-      const pct = breakStepTotalMs ? Math.round(((breakStepTotalMs - breakStepLeftMs) / breakStepTotalMs) * 100) : 0;
-      $('breakStepProg').style.width = `${pct}%`;
+      const seconds = Math.ceil(breakStepLeftMs / 1000);
+      $('stepTimer').textContent = Math.floor(seconds / 60) + ':' + pad(seconds % 60);
+      $('breakStepProg').style.width = (breakStepTotalMs
+        ? Math.round(((breakStepTotalMs - breakStepLeftMs) / breakStepTotalMs) * 100)
+        : 0) + '%';
+      $('breakStepAction').textContent = breakStepIdx < breakPlan.length - 1
+        ? 'следующее упражнение ➔'
+        : 'завершить разминку ✓';
+      setDisplay('breakStepAction', true);
+      $('breakStepAction').disabled = false;
+      $('btnRefreshAI').disabled = false;
     }
 
     // Вернулись на вкладку: сверяем отсчёт и заново берём блокировку экрана.
@@ -5088,7 +5280,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       $('addForm').addEventListener('submit', addTask);
       $('editForm').addEventListener('submit', saveEditTask);
-      $('aiCoachBtn').addEventListener('click', requestAICoachTip);
 
       $('addDay').addEventListener('change', () => fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value));
       $('addSubj').addEventListener('change', () => {
