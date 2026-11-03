@@ -749,8 +749,19 @@
     .ai-day-review-content { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; }
     body.ai-disabled #batchAiChip,
     body.ai-disabled #btnRefreshAI,
+    body.ai-disabled #btnRefreshDayReview,
+    body.ai-disabled #aiDayReviewBanner,
     body.ai-disabled .task-subtasks,
     body.ai-disabled [data-act="decompose"] {
+      display: none !important;
+    }
+    body.ai-unavailable #batchAiChip,
+    body.ai-unavailable #btnRefreshAI,
+    body.ai-unavailable #btnRefreshDayReview,
+    body.ai-unavailable #aiDayReviewBanner,
+    body.ai-unavailable #aiSettingsGroup,
+    body.ai-unavailable .task-subtasks,
+    body.ai-unavailable [data-act="decompose"] {
       display: none !important;
     }
     .task-actions {
@@ -1096,6 +1107,9 @@
       max-height: 320px;
       overflow: hidden;
     }
+    #smartBreakCard:hover { transform: none !important; }
+    #stepTimer { min-width: 48px; text-align: center; display: inline-flex; justify-content: center; }
+    #stepDesc { height: 60px; overflow-y: auto; }
     #smartBreakCard.is-loading {
       animation: breakCardPulse 1.2s ease-in-out infinite;
     }
@@ -1281,24 +1295,24 @@
       pointer-events: auto;
     }
 
-    /* Стеклянный тултип-указатель */
+    /* Тултип обучения — непрозрачный фон без стекла */
     .tour-tooltip {
       position: fixed;
-      z-index: 150;
-      max-width: 260px;
-      background: var(--card-sub);
-      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      z-index: 200;
+      width: min(calc(100vw - 24px), 270px);
+      max-width: 270px;
+      box-sizing: border-box;
+      background: var(--card-solid);
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px 14px;
       color: var(--text);
       font-size: 12px;
       line-height: 1.4;
-      box-shadow: inset 0 1.5px 2px var(--glass-highlight), inset 0 -1px 2px var(--glass-rim), 0 10px 30px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       animation: tooltipFloat 2.8s ease-in-out infinite alternate;
       pointer-events: auto;
-      transition: opacity 0.45s ease, transform 0.45s ease;
+      transition: opacity 0.2s ease, top 0.1s linear, left 0.1s linear;
     }
 
     @keyframes tooltipFloat {
@@ -1422,7 +1436,7 @@
         </div>
         <div class="glass stat-cell">
           <div class="stat-label">запланировано</div>
-          <div class="stat-val" id="statPlanned">0 м</div>
+          <div class="stat-val" id="statPlanned">0 мин</div>
         </div>
         <div class="glass stat-cell">
           <div class="stat-label" style="color:var(--success);">выполнено всего</div>
@@ -1438,8 +1452,16 @@
         <div class="prog-bg"><div class="prog-fill" id="progFill"></div></div>
       </div>
 
-      <div class="section-title">итоги за период</div>
-      <div class="chips" id="periodChips">
+       <div class="section-title">итоги за период</div>
+       <div class="glass ai-day-review" id="aiDayReviewBanner">
+         <span aria-hidden="true" style="font-size:20px;line-height:1;">✨</span>
+         <div class="ai-day-review-content">
+           <div style="font-size:10px;font-weight:800;letter-spacing:.4px;color:var(--accent);margin-bottom:3px;">AI-итог дня</div>
+           <strong id="aiDayReviewText" style="font-weight:800;">Нажмите ↻, чтобы получить короткий итог.</strong>
+         </div>
+         <button type="button" class="btn-act" id="btnRefreshDayReview" onclick="requestAIDayReview()" title="обновить итог дня" aria-label="обновить итог дня">↻</button>
+       </div>
+       <div class="chips" id="periodChips">
         <button class="chip" data-p="day" onclick="setPeriod('day', this)">день</button>
         <button class="chip" data-p="week" onclick="setPeriod('week', this)">неделя</button>
         <button class="chip" data-p="month" onclick="setPeriod('month', this)">месяц</button>
@@ -1623,14 +1645,14 @@
         </div>
         <input type="checkbox" id="setNotif" onchange="toggleNotif(this.checked)" aria-labelledby="notifLabel" style="width:20px;height:20px;accent-color:var(--accent);">
       </div>
-      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:700;font-size:13px;">приветствие при запуске</div>
-          <div style="font-size:11px;color:var(--muted);">показывать экран с описанием функций</div>
-        </div>
-        <input type="checkbox" id="setShowWelcome" onchange="toggleShowWelcome(this.checked)" aria-labelledby="setShowWelcome" style="width:20px;height:20px;accent-color:var(--accent);">
-      </div>
-      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
+ <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
+ <div>
+ <div id="welcomeLabel" style="font-weight:700;font-size:13px;">приветствие при запуске</div>
+ <div style="font-size:11px;color:var(--muted);">показывать экран с описанием функций</div>
+ </div>
+ <input type="checkbox" id="setShowWelcome" onchange="toggleShowWelcome(this.checked)" aria-labelledby="welcomeLabel" style="width:20px;height:20px;accent-color:var(--accent);">
+ </div>
+      <div class="form-group" id="aiSettingsGroup" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-weight:700;font-size:13px;" id="aiDisabledLabel">отключить AI-функции</div>
           <div style="font-size:11px;color:var(--muted);">скрыть AI-инструменты и использовать локальные разминки</div>
@@ -1645,6 +1667,14 @@
         </div>
         <input type="checkbox" id="setAutoArchive" onchange="toggleAutoArchive(this.checked)" style="width:20px;height:20px;accent-color:var(--accent);">
       </div>
+      <div class="form-group" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div id="schedSavedLabel" style="font-weight:700;font-size:13px;">скрыть вкладку «график»</div>
+          <div style="font-size:11px;color:var(--muted);">убрать из нижнего меню (открыть можно кнопкой ниже)</div>
+        </div>
+        <input type="checkbox" id="setHideSched" onchange="toggleHideSched(this.checked)" aria-labelledby="schedSavedLabel" style="width:20px;height:20px;accent-color:var(--accent);">
+      </div>
+      <button type="button" class="btn-act" style="width:100%; margin-bottom:14px;" onclick="closeSettings(); tab('schedule', navBtn('schedule'));">📅 открыть школьный график</button>
       <div class="form-group">
         <label class="label" for="setTheme">тема liquid glass:</label>
         <select id="setTheme" class="input" onchange="changeTheme(this.value)">
@@ -1718,7 +1748,7 @@
         <div class="settings-pill-default" id="setModalFooterDefault">
           <span class="settings-pill-logo">❖</span>
           <span aria-hidden="true">•</span>
-          <span class="settings-pill-ver">studyflow v4.0.0</span>
+          <span class="settings-pill-ver">studyflow v7.0</span>
         </div>
         <div class="settings-pill-notice" id="setModalFooterNotice" aria-live="polite">
           <span id="setNoticeIcon" class="settings-notice-icon"></span>
@@ -1807,6 +1837,26 @@
     </div>
   </div>
 
+  <!-- ПОДТВЕРЖДЕНИЕ СОХРАНЕНИЯ РАСПИСАНИЯ -->
+  <div class="modal-overlay" id="schedConfirmModal">
+    <div class="glass modal-box" role="dialog" aria-modal="true" aria-labelledby="schedConfirmTitle">
+      <div class="modal-header">
+        <span id="schedConfirmTitle" style="font-weight: 800; font-size: 15px;">расписание сохранено</span>
+        <button class="icon-btn" onclick="cancelSchedSave()" aria-label="закрыть" style="width:30px;height:30px;">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 22px; text-align: center;">
+        <p style="font-size: 13px; line-height: 1.5; margin-bottom: 16px;">
+          вы хотите скрыть раздел «график»?<br>
+          <span style="color: var(--muted); font-size: 12px;">расписание будет доступно в настройках — это освободит экран и упростит навигацию.</span>
+        </p>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-act btn-go" style="flex: 1; justify-content: center;" id="schedConfirmYes" onclick="confirmSchedSave()">да, переместить</button>
+          <button class="btn-act" style="flex: 1; justify-content: center;" onclick="cancelSchedSave()">нет, оставить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ТАЙМЕР -->
   <div class="timer-view" id="timerView" role="dialog" aria-modal="true" aria-label="фокус-сессия">
     <!-- Свёрнутый вид: остаток времени и быстрые кнопки -->
@@ -1861,6 +1911,7 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <span id="breakStepBadge" style="color:var(--muted); font-weight:700;">1 / 3</span>
             <span id="breakAIIndicator" role="img" aria-label="упражнение создано AI" title="упражнение создано AI" style="display:none; width:6px; height:6px; border-radius:50%; background:#ff5b64; box-shadow:0 0 6px rgba(255,91,100,0.55);"></span>
+            <span id="breakLocalIndicator" role="img" aria-label="упражнение загружено локально" title="упражнение загружено локально" style="display:none; width:6px; height:6px; border-radius:50%; background:#06d6a0; box-shadow:0 0 6px rgba(6,214,160,0.55);"></span>
             <button type="button" id="btnRefreshAI" onclick="requestAICoachTip()" title="перегенерировать разминку" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:0 2px;">↻</button>
           </div>
         </div>
@@ -1884,9 +1935,10 @@
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <button class="btn-main" id="btnGoBreak" onclick="startBreak()">перейти к отдыху</button>
           <button class="btn-main btn-success" onclick="finishTask()">завершить задачу</button>
-          <button class="btn-act" id="btnAdd5" onclick="add5Min()">+5 мин продолжить</button>
-          <button class="btn-act" id="btnBackWork" style="display:none;">ещё один рабочий цикл</button>
-          <button class="btn-act" id="btnAbort" onclick="abortTimer()">выйти, задача останется в плане</button>
+ <button class="btn-act" id="btnAdd5" onclick="add5Min()">+5 мин продолжить</button>
+           <button class="btn-act" id="btnBackWork" onclick="startWorkAgain()" style="display:none;">ещё один рабочий цикл</button>
+           <button class="btn-act" id="btnNextTask" style="display:none;">⚡ следующая задача</button>
+           <button class="btn-act" id="btnAbort" onclick="abortTimer()">выйти, задача останется в плане</button>
         </div>
       </div>
     </div>
@@ -1914,33 +1966,34 @@
       });
     }
 
-    // ---------- Supabase Auth ----------
-    async function handleSignUp() {
-      if (!sbClient) return showToast('supabase не подключен', '!');
-      const email = $('auth-email').value.trim();
-      const password = $('auth-password').value.trim();
-      if (!email || !password) return showToast('введите email и пароль', '!');
-      
-      const emailLower = email.toLowerCase();
-      if (emailLower.includes('@mail.ru') || emailLower.includes('@bk.ru') || emailLower.includes('@inbox.ru')) {
-        showToast('почты mail не поддерживаются. нужен gmail или outlook', '!');
-        return;
-      }
-      
-      if (!emailLower.includes('@gmail.com') && !emailLower.includes('@outlook.com') && !emailLower.includes('@yahoo.com')) {
-        showToast('нужен gmail, outlook или yahoo', '!');
-        return;
-      }
-      
-      const { data, error } = await sbClient.auth.signUp({ email, password });
-      if (error) {
-        showToast('ошибка регистрации: ' + error.message, '!');
-      } else {
-        showToast('регистрация успешна! пробуем войти...');
-        _cloudSyncToastShown = false;
-        checkUser();
-      }
-    }
+     // ---------- Supabase Auth ----------
+     async function handleSignUp() {
+       if (!sbClient) return showToast('supabase не подключен', '!');
+       const email = $('auth-email').value.trim();
+       const password = $('auth-password').value.trim();
+       if (!email || !password) return showToast('введите email и пароль', '!');
+
+       const emailLower = email.toLowerCase();
+       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailLower)) {
+         showToast('введите корректный email', '!');
+         return;
+       }
+       if (/@(?:mail|bk|inbox|list)\.ru$/.test(emailLower)) {
+         showToast('почты Mail.ru не поддерживаются. используйте Gmail, Outlook, Яндекс или iCloud', '!');
+         return;
+       }
+
+       const { data, error } = await sbClient.auth.signUp({ email, password });
+       if (error) {
+         showToast('ошибка регистрации: ' + error.message, '!');
+       } else if (data && data.user && !data.session) {
+         showToast('регистрация успешна! подтвердите письмо на почте и войдите');
+       } else {
+         showToast('регистрация успешна! пробуем войти...');
+         _cloudSyncToastShown = false;
+         checkUser();
+       }
+     }
 
     async function handleSignIn() {
       if (!sbClient) return showToast('supabase не подключен', '!');
@@ -2023,45 +2076,54 @@
           return;
         }
 
-        if (data && data.payload) {
-          const c = data.payload;
+         if (data && data.payload) {
+           clearTimeout(cloudSyncTimer);
+           cloudSyncGeneration += 1;
+           const c = data.payload;
 
-          if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
-          if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
-          if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
-          if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
-          if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
-          if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
-          if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
-          if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
-          if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen !== 'false';
-          if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
-          if (c.ep_ai_disabled !== undefined) state.aiDisabled = c.ep_ai_disabled === 'true';
-          if (c.ep_school_start) state.schoolStart = c.ep_school_start;
-          if (c.ep_school_end) state.schoolEnd = c.ep_school_end;
+           if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
+           if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
+           if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
+           if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
+           if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
+           if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
+           if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
+           if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
+           if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen === 'true';
+           if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
+           if (c.ep_ai_disabled !== undefined) state.aiDisabled = c.ep_ai_disabled === 'true';
+           if (c.ep_sched_saved !== undefined) state.schedSaved = c.ep_sched_saved === 'true';
+           if (c.ep_school_start) state.schoolStart = c.ep_school_start;
+           if (c.ep_school_end) state.schoolEnd = c.ep_school_end;
 
-          try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
-          try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
-          try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
-          try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
+           try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
+           try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
+           try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
+           try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
 
-          // Фиксируем скачанное в локальном localStorage
-          for (const k of Object.keys(c)) {
-            writeRaw(k, c[k]);
-          }
+           // Фиксируем скачанное в локальном localStorage
+           for (const k of Object.keys(c)) {
+             writeRaw(k, c[k]);
+           }
 
-          // Полный цикл обновления визуала
-      updateDaysConfig();
-          applyAppearance();
-          renderAll();
-          loadSchedDay();
-          fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-          if (showNotify && !_cloudSyncToastShown) {
-            _cloudSyncToastShown = true;
-            showToast('данные синхронизированы с облаком');
-          }
-        }
-        setSyncStatus('saved');
+           // Полный цикл обновления визуала
+           updateDaysConfig();
+           updateAIFeatureVisibility();
+           updateAddTabVisibility();
+           applyAppearance();
+           checkAutoArchive();
+            renderAll();
+            loadSchedDay();
+            fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+            checkAIAvailability();
+            if (showNotify && !_cloudSyncToastShown) {
+             _cloudSyncToastShown = true;
+             showToast('данные синхронизированы с облаком');
+           }
+           setSyncStatus('saved');
+         } else {
+           save(true);
+         }
       } catch (err) {
         console.error('критическая ошибка разбора данных облака:', err);
         setSyncStatus('error');
@@ -2202,17 +2264,18 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     // ---------- Состояние ----------
-    let state = {
-      theme: 'dark', liquid: true, start: 'overview',
-      aiDisabled: false,
-      schoolStart: '08:00', schoolEnd: '13:15',
-      work: 25, rest: 5, curDay: 1, filter: 'all', period: 'day',
+     let state = {
+        theme: 'dark', liquid: true, start: 'overview',
+        aiDisabled: false, aiCooldownUntil: 0,
+        schoolStart: '08:00', schoolEnd: '13:15',
+       work: 25, rest: 5, curDay: Math.min(5, Math.max(1, new Date().getDay() || 1)), filter: 'all', period: 'day',
       doneTotal: 0,            // сколько задач выполнено всего (не зависит от очистки архива)
       focus: {},               // { 'YYYY-MM-DD': миллисекунды фокуса }
       notif: false,            // системные уведомления (push)
       welcomeShown: true,      // показывать приветствие при запуске
-      autoArchive: true,       // автоархивация старых задач
-      schedule: { 1: [], 2: [], 3: [], 4: [], 5: [] },
+       autoArchive: true,       // автоархивация старых задач
+       schedSaved: false,       // расписание сохранено — скрываем вкладку «график»
+       schedule: { 1: [], 2: [], 3: [], 4: [], 5: [] },
       tasks: [], archive: []
     };
     const loadWarnings = [];
@@ -2221,34 +2284,47 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       return Number.isInteger(n) && n >= 1 && n <= 5;
     }
 
-    // ---------- Утилиты ----------
-    function getLocalToday(d = new Date()) {
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-    }
+     // ---------- Утилиты ----------
+     function getLocalToday(d = new Date()) {
+       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+     }
 
-    function getNextLessonDate(subjName) {
-      if (!subjName) return '';
-      const s = subjName.toLowerCase().trim();
-      const today = new Date();
-      const matchingDays = [];
-      for (let d = 1; d <= 5; d++) {
-        const list = state.schedule[d] || [];
-        if (list.some(l => l.toLowerCase() === s || l.toLowerCase().includes(s))) {
-          matchingDays.push(d);
-        }
-      }
-      if (!matchingDays.length) return '';
+     function isSameSubjectName(a, b) {
+       const na = String(a || '').toLocaleLowerCase('ru').replace(/ё/g, 'е').trim();
+       const nb = String(b || '').toLocaleLowerCase('ru').replace(/ё/g, 'е').trim();
+       if (!na || !nb) return false;
+       if (na === nb) return true;
+       if (typeof MASTER_SUBJECTS !== 'undefined') {
+         const ma = MASTER_SUBJECTS.find(item => item.name.toLocaleLowerCase('ru') === na || item.regex.test(na));
+         const mb = MASTER_SUBJECTS.find(item => item.name.toLocaleLowerCase('ru') === nb || item.regex.test(nb));
+         if (ma && mb) return ma.name === mb.name;
+       }
+       return false;
+     }
 
-      for (let offset = 1; offset <= 7; offset++) {
-        const checkDate = new Date(today);
-        checkDate.setDate(today.getDate() + offset);
-        const dayOfWeek = checkDate.getDay() || 7;
-        if (matchingDays.includes(dayOfWeek)) {
-          return getLocalToday(checkDate);
-        }
-      }
-      return '';
-    }
+      function getNextLessonDate(subjName) {
+       if (!subjName) return '';
+       const s = subjName.toLowerCase().trim();
+       const today = new Date();
+       const matchingDays = [];
+       for (let d = 1; d <= 5; d++) {
+         const list = state.schedule[d] || [];
+         if (list.some(l => isSameSubjectName(l, s))) {
+           matchingDays.push(d);
+         }
+       }
+       if (!matchingDays.length) return '';
+
+       for (let offset = 1; offset <= 7; offset++) {
+         const checkDate = new Date(today);
+         checkDate.setDate(today.getDate() + offset);
+         const dayOfWeek = checkDate.getDay() || 7;
+         if (matchingDays.includes(dayOfWeek)) {
+           return getLocalToday(checkDate);
+         }
+       }
+       return '';
+     }
 
     function esc(s) {
       if (s === null || s === undefined) return '';
@@ -2301,7 +2377,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       return `${Number(d)} ${MONTHS_SHORT[Number(m) - 1]}`;
     }
 
-    function fmtMin(m) { return m >= 60 ? `${Math.floor(m / 60)}ч ${m % 60}м` : `${m} м`; }
+     function fmtMin(m) { return m >= 60 ? `${Math.floor(m / 60)}ч ${m % 60}мин` : `${m} мин`; }
     function fmtMs(ms) { return fmtMin(Math.round(ms / 60000)); }
     function activeSeg(groupId) { return document.querySelector(`#${groupId} .seg-btn.active`)?.dataset.v; }
     function setGroupActive(btns, activeEl) {
@@ -2623,81 +2699,92 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       label.textContent = text || statusText[status] || 'не синхронизировано';
     }
 
-    let cloudSyncTimer = null;
-    let cloudSyncGeneration = 0;
-    let cloudSyncPromise = Promise.resolve();
-    function save(syncCloud = true) {
-      if (resetting) return true;
-      const data = {
-        ep_theme: state.theme,
-        ep_liquid: String(state.liquid),
-        ep_start: state.start,
-        ep_period: state.period,
-        ep_work: String(state.work),
-        ep_rest: String(state.rest),
-        ep_done: String(state.doneTotal),
-        ep_notif: String(state.notif),
-        ep_welcomescreen: String(state.welcomeShown),
-        ep_autoarchive: String(state.autoArchive),
-        ep_ai_disabled: String(state.aiDisabled),
-        ep_school_start: state.schoolStart,
-        ep_school_end: state.schoolEnd,
-        ep_focus: JSON.stringify(state.focus),
-        ep_sched: JSON.stringify(state.schedule),
-        ep_tasks: JSON.stringify(state.tasks),
-        ep_archive: JSON.stringify(state.archive)
-      };
+     let cloudSyncTimer = null;
+     let cloudSyncGeneration = 0;
+     let cloudSyncPromise = Promise.resolve();
+     function buildStoragePayload() {
+       return {
+         ep_theme: state.theme,
+         ep_liquid: String(state.liquid),
+         ep_start: state.start,
+         ep_period: state.period,
+         ep_work: String(state.work),
+         ep_rest: String(state.rest),
+         ep_done: String(state.doneTotal),
+         ep_notif: String(state.notif),
+         ep_welcomescreen: String(state.welcomeShown),
+         ep_autoarchive: String(state.autoArchive),
+          ep_ai_disabled: String(state.aiDisabled),
+          ep_sched_saved: String(state.schedSaved),
+          ep_school_start: state.schoolStart,
+         ep_school_end: state.schoolEnd,
+         ep_focus: JSON.stringify(state.focus),
+         ep_sched: JSON.stringify(state.schedule),
+         ep_tasks: JSON.stringify(state.tasks),
+         ep_archive: JSON.stringify(state.archive)
+       };
+     }
 
-      let ok = true;
-      for (const k of Object.keys(data)) {
-        if (!writeRaw(k, data[k])) ok = false;
-      }
-      if (!ok && Date.now() - lastSaveWarn > 10000) {
-        lastSaveWarn = Date.now();
-        showToast('не удалось сохранить данные в браузере', '!');
-      }
+     function save(syncCloud = true) {
+       if (resetting) return true;
+       const data = buildStoragePayload();
 
-      if (syncCloud && sbClient) {
-        clearTimeout(cloudSyncTimer);
-        cloudSyncTimer = setTimeout(async () => {
-          const generation = cloudSyncGeneration;
-          cloudSyncPromise = cloudSyncPromise.then(async () => {
-            if (resetting || generation !== cloudSyncGeneration) return;
-            setSyncStatus('syncing');
-            try {
-              const { data: authData, error: authError } = await sbClient.auth.getUser();
-              if (authError) throw authError;
-              const user = authData?.user;
-              if (!user) {
-                setSyncStatus('offline');
-                return;
-              }
-              const { data: existing, error: lookupError } = await sbClient
-                .from('user_data')
-                .select('id')
-                .eq('user_id', user.id)
-                .maybeSingle();
-              if (lookupError) throw lookupError;
-              if (resetting || generation !== cloudSyncGeneration) return;
+       let ok = true;
+       for (const k of Object.keys(data)) {
+         if (!writeRaw(k, data[k])) ok = false;
+       }
+       if (!ok && Date.now() - lastSaveWarn > 10000) {
+         lastSaveWarn = Date.now();
+         showToast('не удалось сохранить данные в браузере', '!');
+       }
 
-              if (existing) {
-                const { error } = await sbClient
-                  .from('user_data')
-                  .update({ payload: data, updated_at: new Date().toISOString() })
-                  .eq('user_id', user.id);
-                if (error) throw error;
-              } else {
-                const { error } = await sbClient
-                  .from('user_data')
-                  .insert([{ user_id: user.id, payload: data }]);
-                if (error) throw error;
-              }
-              console.log('данные синхронизированы с облаком Supabase');
-              setSyncStatus('saved');
-            } catch (err) {
-              console.error('ошибка облачной синхронизации:', err);
-              setSyncStatus('error');
-            }
+       if (syncCloud && sbClient) {
+         clearTimeout(cloudSyncTimer);
+         cloudSyncTimer = setTimeout(async () => {
+           const generation = cloudSyncGeneration;
+           cloudSyncPromise = cloudSyncPromise.then(async () => {
+             if (resetting || generation !== cloudSyncGeneration) return;
+             const latestData = buildStoragePayload();
+             setSyncStatus('syncing');
+             try {
+               const { data: authData, error: authError } = await sbClient.auth.getUser();
+               if (authError) throw authError;
+               const user = authData?.user;
+               if (!user) {
+                 setSyncStatus('offline');
+                 return;
+               }
+               const { data: existing, error: lookupError } = await sbClient
+                 .from('user_data')
+                 .select('id')
+                 .eq('user_id', user.id)
+                 .maybeSingle();
+               if (lookupError) throw lookupError;
+               if (resetting || generation !== cloudSyncGeneration) return;
+
+               if (existing) {
+                 const { error } = await sbClient
+                   .from('user_data')
+                   .update({ payload: latestData, updated_at: new Date().toISOString() })
+                   .eq('user_id', user.id);
+                 if (error) throw error;
+               } else {
+                 const { error } = await sbClient
+                   .from('user_data')
+                   .insert([{ user_id: user.id, payload: latestData }]);
+                 if (error) throw error;
+               }
+               console.log('данные синхронизированы с облаком Supabase');
+               setSyncStatus('saved');
+             } catch (err) {
+               console.error('ошибка облачной синхронизации:', err);
+               const { data: authData } = await sbClient.auth.getUser().catch(() => ({ data: {} }));
+               if (!authData?.user) {
+                 setSyncStatus('offline');
+               } else {
+                 setSyncStatus('error');
+               }
+             }
           });
         }, 350);
       } else if (syncCloud) {
@@ -2863,20 +2950,15 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         if (prepositionMatch) subjectStart -= prepositionMatch[0].length;
         remaining = `${remaining.slice(0, subjectStart)} ${remaining.slice(subjectMatch.end)}`;
 
-        const subjectKey = normalizeSubject(detectedSubj);
-        for (let day = 1; day <= 5 && !detectedDay; day++) {
-          const scheduled = (state.schedule[day] || []).find(name => {
-            const scheduledKey = normalizeSubject(name);
-            return scheduledKey === subjectKey ||
-              (scheduledKey.length >= 3 && subjectKey.startsWith(scheduledKey.slice(0, 3))) ||
-              (subjectKey.length >= 3 && scheduledKey.startsWith(subjectKey.slice(0, 3)));
-          });
-          if (scheduled) {
-            detectedSubj = scheduled;
-            detectedDay = String(day);
-          }
-        }
-      }
+         const subjectKey = normalizeSubject(detectedSubj);
+         for (let day = 1; day <= 5 && !detectedDay; day++) {
+           const scheduled = (state.schedule[day] || []).find(name => isSameSubjectName(name, detectedSubj));
+           if (scheduled) {
+             detectedSubj = scheduled;
+             detectedDay = String(day);
+           }
+         }
+       }
 
       // Stage 2: extract and remove a due-date phrase.
       const numericDateMatch = remaining.match(/(?:^|[^\p{L}\p{N}])(?:(?:к|на|до)\s+)?(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?=[^\p{L}\p{N}]|$)/iu);
@@ -2923,9 +3005,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         if (detectedDue) remaining = remaining.replace(namedDateMatch[0], ' ');
       }
 
-      if (!detectedDue && detectedSubj) {
-        detectedDue = getNextLessonDate(detectedSubj);
-      }
+       if (!detectedDue && detectedSubj) {
+         detectedDue = getNextLessonDate(detectedSubj);
+         if (detectedDue && isValidDate(detectedDue)) {
+           const dueWeekday = new Date(detectedDue + 'T00:00:00').getDay() || 7;
+           if (dueWeekday >= 1 && dueWeekday <= 5) {
+             detectedDay = String(dueWeekday);
+             const scheduledOnDueDay = (state.schedule[dueWeekday] || []).find(name => isSameSubjectName(name, detectedSubj));
+             if (scheduledOnDueDay) detectedSubj = scheduledOnDueDay;
+           }
+         }
+       }
 
       // Stage 3: infer effort from action verbs and the assignment's exercise count.
       const complexityRules = [
@@ -3023,19 +3113,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       } else {
         hintEl.style.display = 'none';
       }
-      if (commit && cleaned) {
-        $('addText').value = cleaned;
-        $('addText').dataset.parserCleaned = cleaned;
-      }
-      return cleaned || original.trim();
-    }
+       if (commit && cleaned) {
+         $('addText').value = cleaned;
+         $('addText').dataset.parserCleaned = cleaned;
+         if (detectedSubj) $('addSubj').dataset.userLocked = '1';
+         if (detectedDay) $('addDay').dataset.userLocked = '1';
+         if (detectedDue) $('addDue').dataset.userLocked = '1';
+       }
+       return cleaned || original.trim();
+     }
 
-    function applyDemoTask(text) {
-      const input = $('addText');
-      input.value = text;
-      input.value = parseTaskNaturalInput(text, { commit: true });
-      input.focus();
-    }
+     function applyDemoTask(text) {
+       delete $('addSubj').dataset.userLocked;
+       delete $('addDay').dataset.userLocked;
+       delete $('addDue').dataset.userLocked;
+       delete $('addComp').dataset.userLocked;
+       delete $('addPrio').dataset.userLocked;
+       const input = $('addText');
+       input.value = text;
+       input.value = parseTaskNaturalInput(text, { commit: true });
+       input.focus();
+     }
 
     function normalizeSchedule(v) {
       const out = { 1: [], 2: [], 3: [], 4: [], 5: [] };
@@ -3129,8 +3227,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       state.notif = readRaw('ep_notif') === 'true';
       state.welcomeShown = readRaw('ep_welcomescreen') !== 'false';
       state.autoArchive = readRaw('ep_autoarchive') !== 'false';
-      state.aiDisabled = readRaw('ep_ai_disabled') === 'true';
-      const sStart = readRaw('ep_school_start'); if (sStart) state.schoolStart = sStart;
+       state.aiDisabled = readRaw('ep_ai_disabled') === 'true';
+       state.schedSaved = readRaw('ep_sched_saved') === 'true';
+       const sStart = readRaw('ep_school_start'); if (sStart) state.schoolStart = sStart;
       const sEnd = readRaw('ep_school_end'); if (sEnd) state.schoolEnd = sEnd;
       updateDaysConfig();
 
@@ -3252,15 +3351,32 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const toArchive = [];
       const remaining = [];
 
-      state.tasks.forEach(t => {
-        if (t.due && t.due < today) {
-          t.closedAt = t.due;
-          t.closedReason = 'overdue';
-          toArchive.push(t);
-        } else {
-          remaining.push(t);
-        }
-      });
+       state.tasks.forEach(t => {
+         if (t.due && t.due < today) {
+           if (t.repeat === 'weekly') {
+             const nextDueDate = new Date(`${t.due}T00:00:00`);
+             while (getLocalToday(nextDueDate) < today) {
+               nextDueDate.setDate(nextDueDate.getDate() + 7);
+             }
+             let nextId = newId();
+             while (state.tasks.some(task => task.id === nextId) || state.archive.some(task => task.id === nextId)) {
+               nextId = newId();
+             }
+             const repeatTask = normalizeTask({
+               ...t,
+               id: nextId,
+               due: getLocalToday(nextDueDate),
+               subtasks: Array.isArray(t.subtasks) ? t.subtasks.map(s => ({ text: s.text, done: false })) : undefined
+             });
+             if (repeatTask) remaining.push(repeatTask);
+           }
+           t.closedAt = t.due;
+           t.closedReason = 'overdue';
+           toArchive.push(t);
+         } else {
+           remaining.push(t);
+         }
+       });
 
       if (toArchive.length) {
         state.tasks = remaining;
@@ -3477,6 +3593,43 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
       const base = list.length ? `расписание на ${DAYS[d]} сохранено` : `расписание на ${DAYS[d]} очищено`;
       showToast(truncated ? base + ' (длинные названия сокращены)' : base, truncated ? '!' : '');
+      if (!state.schedSaved && list.length) {
+        showModal($('schedConfirmModal'), $('schedConfirmYes'));
+      }
+    }
+
+    function updateAddTabVisibility() {
+      const schedBtn = document.querySelector('.nav-btn[data-tab="schedule"]');
+      if (schedBtn) {
+        schedBtn.style.display = state.schedSaved ? 'none' : '';
+      }
+      if ($('setHideSched')) {
+        $('setHideSched').checked = state.schedSaved;
+      }
+    }
+
+    function toggleHideSched(hidden) {
+      state.schedSaved = Boolean(hidden);
+      updateAddTabVisibility();
+      save();
+      showToast(state.schedSaved ? 'вкладка «график» скрыта из меню' : 'вкладка «график» возвращена в меню');
+    }
+
+    function confirmSchedSave() {
+      hideModal($('schedConfirmModal'));
+      state.schedSaved = true;
+      updateAddTabVisibility();
+      save();
+      tab('overview', navBtn('overview'));
+      showToast('раздел «график» скрыт — расписание доступно в настройках');
+    }
+
+    function cancelSchedSave() {
+      hideModal($('schedConfirmModal'));
+      state.schedSaved = false;
+      updateAddTabVisibility();
+      save();
+      showToast('раздел «график» остался на месте');
     }
 
     // ---------- Предметы в формах ----------
@@ -3555,7 +3708,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     async function importBatchAiTasks(e) {
       e.preventDefault();
-      if (state.aiDisabled || batchAiPending) return;
+      if (!isAiAvailable()) {
+        showToast('AI временно недоступен, введите вручную', 'i');
+        return;
+      }
+      if (state.aiDisabled || aiUnreachable || batchAiPending) return;
       const rawText = $('batchAiText').value.trim();
       if (!rawText) { showToast('вставьте текст с заданиями', '!'); return; }
       if (!sbClient || !navigator.onLine) { showToast('AI-разбор недоступен офлайн', '!'); return; }
@@ -3568,8 +3725,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const result = await sbClient.functions.invoke('ai-coach', {
           body: { action: 'parse_raw', rawText: rawText, today: getLocalToday() }
         });
-        if (result.error) throw result.error;
         if (state.aiDisabled) return;
+        if (result.error) throw result.error;
         if (!result.data || !Array.isArray(result.data.tasks)) throw new Error('AI вернул некорректный список заданий');
         const tasks = result.data.tasks.map(rawTask => {
           if (!rawTask || typeof rawTask !== 'object' || Array.isArray(rawTask)) return null;
@@ -3589,6 +3746,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast('добавлено задач: ' + tasks.length);
       } catch (error) {
         console.error('ошибка разбора текста с заданиями:', error);
+        triggerAiCooldown(15);
         showToast(error && error.message || 'не удалось разобрать текст', '!');
       } finally {
         batchAiPending = false;
@@ -3668,7 +3826,22 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     const decomposingTaskIds = new Set();
     async function decomposeTask(id, button) {
       const task = state.tasks.find(item => item.id === id);
-      if (state.aiDisabled || !task || decomposingTaskIds.has(id)) return;
+      if (!isAiAvailable()) {
+        const fallbackSubtasks = [
+          { text: "Разобрать условия и составить план", done: false },
+          { text: "Выполнить основную часть работы", done: false },
+          { text: "Проверить ошибки и оформить", done: false }
+        ];
+        const currentTask = state.tasks.find(item => item.id === id);
+        if (currentTask) {
+          currentTask.subtasks = fallbackSubtasks;
+          save();
+          renderTasks();
+          showToast('шаги задания готовы');
+        }
+        return;
+      }
+      if (state.aiDisabled || aiUnreachable || !task || decomposingTaskIds.has(id)) return;
       if (!sbClient || !navigator.onLine) {
         showToast('AI-разбивка недоступна офлайн', '!');
         return;
@@ -3699,7 +3872,19 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast('шаги задания готовы');
       } catch (error) {
         console.error('ошибка AI-разбивки задания:', error);
-        showToast(error && error.message || 'не удалось разбить задание на шаги', '!');
+        triggerAiCooldown(15);
+        const fallbackSubtasks = [
+          { text: "Разобрать условия и составить план", done: false },
+          { text: "Выполнить основную часть работы", done: false },
+          { text: "Проверить ошибки и оформить", done: false }
+        ];
+        const currentTask = state.tasks.find(item => item.id === id);
+        if (currentTask) {
+          currentTask.subtasks = fallbackSubtasks;
+          save();
+          renderTasks();
+          showToast('шаги задания готовы');
+        }
       } finally {
         decomposingTaskIds.delete(id);
         renderTasks();
@@ -3747,7 +3932,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           list.sort((a, b) => {
             const oa = isOverdue(a) ? 0 : 1, ob = isOverdue(b) ? 0 : 1;
             if (oa !== ob) return oa - ob;
-            return cmpDue(a, b);
+            const d = cmpDue(a, b);
+            if (d) return d;
+            return (W[b.prio] || 0) - (W[a.prio] || 0);
           });
       }
 
@@ -3804,15 +3991,19 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             </div>
             <div class="task-actions">
               <button class="btn-act btn-success" data-act="done" data-id="${id}" title="выполнить" aria-label="выполнить">готово</button>
-              <button class="btn-act btn-go" data-act="focus" data-id="${id}">начать фокус</button>
+              <button class="btn-act btn-go" data-act="focus" data-id="${id}">таймер</button>
               <button class="btn-act" data-act="edit" data-id="${id}" title="редактировать" aria-label="редактировать">редактировать</button>
               <button class="btn-act btn-danger" data-act="del" data-id="${id}" title="удалить" aria-label="удалить">удалить</button>
             </div>
           </div>`;
-        const editActionAnchor = '              <button class="btn-act" data-act="edit"';
-        const editActionIndex = taskCard.indexOf(editActionAnchor);
-        const taskCardWithActions = taskCard.slice(0, editActionIndex) + decomposeButton + '\n' + taskCard.slice(editActionIndex);
-        const taskCardWithSubtasks = taskCardWithActions.replace('            <div class="task-meta">', subtasksHtml + '            <div class="task-meta">');
+         const editActionAnchor = '              <button class="btn-act" data-act="edit"';
+         const editActionIndex = taskCard.indexOf(editActionAnchor);
+         const taskCardWithActions = taskCard.slice(0, editActionIndex) + decomposeButton + '\n' + taskCard.slice(editActionIndex);
+         const metaAnchor = '            <div class="task-meta">';
+         const metaIndex = taskCardWithActions.indexOf(metaAnchor);
+         const taskCardWithSubtasks = metaIndex !== -1
+           ? taskCardWithActions.slice(0, metaIndex) + subtasksHtml + taskCardWithActions.slice(metaIndex)
+           : taskCardWithActions;
         const nextComp = list[index + 1]?.comp || t.comp || 'medium';
         const breakCard = index < list.length - 1 && index % 2 === 0
           ? `<div class="break-card">
@@ -3938,7 +4129,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           const maxDate = new Date();
           maxDate.setFullYear(maxDate.getFullYear() + 2);
           const maxStr = getLocalToday(maxDate);
-          if (rawDue >= today && rawDue <= maxStr) {
+          if ((rawDue >= today || rawDue === state.tasks[idx].due) && rawDue <= maxStr) {
             validDue = rawDue;
           } else if (rawDue < today) {
             showToast('срок сдачи не может быть в прошлом', '!');
@@ -4013,7 +4204,22 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let breakRoutineLoading = false;
     let breakRoutineRequestId = 0;
     let breakPlanGeneratedByAI = false;
+    let aiUnreachable = false;
     let timerDigitsHidden = false;
+
+    // ---------- Circuit Breaker для AI ----------
+    function isAiAvailable() {
+      return !state.aiDisabled
+        && navigator.onLine
+        && Boolean(sbClient)
+        && Date.now() > state.aiCooldownUntil;
+    }
+
+    function triggerAiCooldown(minutes = 15) {
+      state.aiCooldownUntil = Date.now() + minutes * 60 * 1000;
+      updateAIFeatureVisibility();
+      renderTasks();
+    }
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
 
@@ -4144,21 +4350,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       setDisplay('btnGoBreak', mode === 'work');
       setDisplay('btnAdd5', mode === 'work');
       setDisplay('btnBackWork', mode === 'break');
-      if (mode === 'break') {
-        const nextTask = state.tasks.find(x => x.id !== tState.id);
-        const backWorkBtn = $('btnBackWork');
-        if (backWorkBtn) {
-          if (nextTask) {
-            backWorkBtn.textContent = `⚡ начать следующее: ${nextTask.subj} (${COMP[nextTask.comp]?.short || '≈25 мин'}) ▶`;
-            backWorkBtn.onclick = () => {
-              hidePhaseModal();
-              closeTimerView();
-              openTimer(nextTask.id);
-            };
-          } else {
-            backWorkBtn.textContent = 'ещё один рабочий цикл';
-            backWorkBtn.onclick = startWorkAgain;
-          }
+      const nextTask = mode === 'break' ? state.tasks.find(x => x.id !== tState.id) : null;
+      const nextTaskBtn = $('btnNextTask');
+      if (nextTaskBtn) {
+        setDisplay('btnNextTask', Boolean(nextTask));
+        if (nextTask) {
+          nextTaskBtn.textContent = `⚡ начать следующее: ${nextTask.subj} (${COMP[nextTask.comp]?.short || '≈25 мин'}) ▶`;
+          nextTaskBtn.onclick = () => {
+            hidePhaseModal();
+            closeTimerView();
+            openTimer(nextTask.id);
+          };
         }
       }
       showModal($('timerPhaseModal'), mode === 'work' ? $('btnGoBreak') : $('btnBackWork'));
@@ -4285,8 +4487,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function setTimerBtn(running) {
       const b = $('timerToggleBtn');
-      b.textContent = running ? 'пауза' : 'продолжить';
-      b.disabled = !running && tState.leftMs <= 0;
+      b.textContent = breakRoutineLoading ? 'подготовка...' : (running ? 'пауза' : 'продолжить');
+      b.disabled = breakRoutineLoading || (!running && tState.leftMs <= 0);
       // Иконка в свёрнутом окне должна совпадать с состоянием.
       const m = $('miniToggle');
       if (m) {
@@ -4700,8 +4902,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     async function fetchAIBreakPlan() {
-      if (state.aiDisabled) throw new Error('AI-функции отключены');
-      if (!sbClient || !navigator.onLine) throw new Error('AI-тренер недоступен');
+      if (!isAiAvailable()) throw new Error('AI недоступен');
+      if (state.aiDisabled || aiUnreachable) throw new Error('AI-функции отключены');
       let timeoutId;
       try {
         const { data, error } = await Promise.race([
@@ -4728,6 +4930,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             ? data.categoryName.trim()
             : 'Персональный план'
         };
+      } catch (err) {
+        triggerAiCooldown(15);
+        throw err;
       } finally {
         clearTimeout(timeoutId);
       }
@@ -4742,6 +4947,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('breakCategory').textContent = '✨ AI • Загрузка...';
       $('breakStepBadge').textContent = '';
       $('breakAIIndicator').style.display = 'none';
+      $('breakLocalIndicator').style.display = 'none';
       $('breakStepProg').style.width = '0%';
       $('breakStepAction').style.display = 'none';
       $('btnRefreshAI').disabled = true;
@@ -4782,6 +4988,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           console.warn('AI break routine fallback:', err);
         }
         if (requestId !== breakRoutineRequestId || tState.phase !== 'break' || tState.leftMs <= 0) return;
+        if (state.aiDisabled) {
+          plan = { steps: routine.steps, categoryName: routine.categoryName, isAI: false };
+        }
 
         breakPlan = plan.steps;
         breakPlanGeneratedByAI = plan.isAI;
@@ -4796,7 +5005,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     async function requestAICoachTip() {
       const refreshBtn = $('btnRefreshAI');
-      if (state.aiDisabled || !refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
+      if (state.aiDisabled || aiUnreachable || !refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
       refreshBtn.disabled = true;
       refreshBtn.classList.add('refresh-spin');
       const requestId = ++breakRoutineRequestId;
@@ -4830,6 +5039,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const cur = breakPlan[idx];
       breakStepTotalMs = cur.dur * 1000;
       breakStepLeftMs = breakStepTotalMs;
+
+      // Fade-in только при смене шага
+      const stepTitleEl = $('stepTitle');
+      const stepDescEl = $('stepDesc');
+      stepTitleEl.classList.remove('fade');
+      stepDescEl.classList.remove('fade');
+      void stepTitleEl.offsetWidth; // reflow
+      stepTitleEl.classList.add('fade');
+      stepDescEl.classList.add('fade');
+
       updateBreakUI();
     }
 
@@ -4843,6 +5062,61 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       } else {
         loadBreakStep(breakStepIdx + 1);
       }
+    }
+
+    async function requestAIDayReview() {
+      if (!isAiAvailable()) {
+        showToast('AI временно недоступен', 'i');
+        return;
+      }
+      if (state.aiDisabled || aiUnreachable) return;
+      if (!sbClient || !navigator.onLine) {
+        showToast('AI-сводка недоступна офлайн', '!');
+        return;
+      }
+      const btn = $('btnRefreshDayReview');
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      btn.classList.add('refresh-spin');
+      $('aiDayReviewText').innerHTML = '<span class="ai-inline-spinner"></span>анализирую день…';
+      try {
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: { action: 'review_day', tasks: state.tasks, archive: state.archive, focus: state.focus, period: state.period }
+        });
+        if (state.aiDisabled || aiUnreachable) return;
+        if (result.error) throw result.error;
+        const text = result.data?.summary || result.data?.text || 'Пока нет данных для сводки.';
+        $('aiDayReviewText').textContent = text;
+      } catch (err) {
+        console.error('ошибка AI-сводки дня:', err);
+        triggerAiCooldown(15);
+        $('aiDayReviewText').textContent = 'Не удалось получить сводку. Попробуйте ещё раз.';
+        showToast('Не удалось получить AI-сводку', '!');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('refresh-spin');
+      }
+    }
+
+    async function checkAIAvailability() {
+      if (!sbClient || !navigator.onLine) {
+        aiUnreachable = true;
+        updateAIFeatureVisibility();
+        renderTasks();
+        return;
+      }
+      try {
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: { action: 'health' }
+        });
+        if (result.error) throw result.error;
+        aiUnreachable = false;
+      } catch (err) {
+        console.warn('AI недоступен:', err.message);
+        aiUnreachable = true;
+      }
+      updateAIFeatureVisibility();
+      renderTasks();
     }
 
     function updateBreakUI() {
@@ -4859,7 +5133,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (card) card.classList.remove('is-loading');
       if (breakRoutineComplete) {
         $('breakStepBadge').textContent = 'готово';
-        $('breakAIIndicator').style.display = 'none';
+      $('breakAIIndicator').style.display = 'none';
+      $('breakLocalIndicator').style.display = 'none';
         $('stepTitle').textContent = '🎉 Отличная работа!';
         $('stepDesc').textContent = 'Активная разминка завершена. Сделай глоток воды и спокойно отдохни оставшееся время.';
         $('stepTimer').textContent = '✓';
@@ -4873,29 +5148,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!cur) return;
       $('breakStepBadge').textContent = (breakStepIdx + 1) + ' / ' + breakPlan.length;
 
-      // Fade-in: убираем класс, forcing reflow, добавляем обратно
-      const stepTitleEl = $('stepTitle');
-      const stepDescEl = $('stepDesc');
-      stepTitleEl.classList.remove('fade');
-      stepDescEl.classList.remove('fade');
-      void stepTitleEl.offsetWidth; // reflow
-      stepTitleEl.classList.add('fade');
-      stepDescEl.classList.add('fade');
-
-      // Скрываем AI-индикатор если AI отключён или план локальный
-      const sourceIndicator = $('breakAIIndicator');
+      // Скрываем индикаторы: красный для AI, зелёный для локального плана
+      const aiIndicator = $('breakAIIndicator');
+      const localIndicator = $('breakLocalIndicator');
       if (state.aiDisabled || !breakPlanGeneratedByAI) {
-        sourceIndicator.style.display = 'none';
+        aiIndicator.style.display = 'none';
+        localIndicator.style.display = 'inline-block';
+        localIndicator.style.background = '#06d6a0';
+        localIndicator.style.boxShadow = '0 0 6px rgba(6,214,160,0.55)';
+        localIndicator.setAttribute('aria-label', 'упражнение загружено локально');
+        localIndicator.title = 'упражнение загружено локально';
       } else {
-        sourceIndicator.style.display = 'inline-block';
-        sourceIndicator.style.background = '#ff5b64';
-        sourceIndicator.style.boxShadow = '0 0 6px rgba(255,91,100,0.55)';
-        sourceIndicator.setAttribute('aria-label', 'упражнение создано AI');
-        sourceIndicator.title = 'упражнение создано AI';
+        aiIndicator.style.display = 'inline-block';
+        aiIndicator.style.background = '#ff5b64';
+        aiIndicator.style.boxShadow = '0 0 6px rgba(255,91,100,0.55)';
+        aiIndicator.setAttribute('aria-label', 'упражнение создано AI');
+        aiIndicator.title = 'упражнение создано AI';
+        localIndicator.style.display = 'none';
       }
 
-      stepTitleEl.textContent = cur.title;
-      stepDescEl.textContent = cur.desc;
+      $('stepTitle').textContent = cur.title;
+      $('stepDesc').textContent = cur.desc;
       const seconds = Math.ceil(breakStepLeftMs / 1000);
       $('stepTimer').textContent = Math.floor(seconds / 60) + ':' + pad(seconds % 60);
       $('breakStepProg').style.width = (breakStepTotalMs
@@ -4939,9 +5212,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('autoTimeSettings').style.display = state.start === 'auto' ? 'flex' : 'none';
       if ($('setNotif')) $('setNotif').checked = state.notif;
       if ($('setShowWelcome')) $('setShowWelcome').checked = state.welcomeShown;
-      if ($('setAIDisabled')) $('setAIDisabled').checked = state.aiDisabled;
+      if ($('setAIDisabled')) {
+        $('setAIDisabled').checked = state.aiDisabled;
+        $('setAIDisabled').disabled = aiUnreachable;
+      }
+      if ($('aiDisabledLabel')) {
+        $('aiDisabledLabel').style.opacity = aiUnreachable ? '0.5' : '1';
+      }
       updateAIFeatureVisibility();
       if ($('setAutoArchive')) $('setAutoArchive').checked = state.autoArchive;
+      if ($('setHideSched')) $('setHideSched').checked = state.schedSaved;
       setDisplay('btnUndoImport', !!importBackup);
     }
     function openSettings() {
@@ -5016,18 +5296,24 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
     function updateAIFeatureVisibility() {
       document.body.classList.toggle('ai-disabled', state.aiDisabled);
+      document.body.classList.toggle('ai-unavailable', aiUnreachable);
     }
 
     function toggleAIFeaturesDisabled(disabled) {
+      if (aiUnreachable) return;
       state.aiDisabled = Boolean(disabled);
       updateAIFeatureVisibility();
       save();
       renderTasks();
       if (state.aiDisabled) {
         if ($('batchAiModal').classList.contains('active')) hideModal($('batchAiModal'));
-        if (tState.phase === 'break' && tState.id && (breakRoutineLoading || breakPlanGeneratedByAI)) initBreakRoutine();
+        if (tState.phase === 'break' && (breakRoutineLoading || breakPlanGeneratedByAI)) initBreakRoutine();
       }
-      showToast(state.aiDisabled ? 'AI-функции отключены' : 'AI-функции включены');
+      if (aiUnreachable) {
+        showToast('AI недоступен — все функции скрыты');
+      } else {
+        showToast(state.aiDisabled ? 'AI-функции отключены' : 'AI-функции включены');
+      }
     }
 
     function toggleLiquid(en) {
@@ -5069,7 +5355,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         notif: state.notif,
         welcomeShown: state.welcomeShown,
         autoArchive: state.autoArchive,
-        aiDisabled: state.aiDisabled
+        aiDisabled: state.aiDisabled,
+        schedSaved: state.schedSaved
       };
       let url = '';
       try {
@@ -5109,6 +5396,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (typeof d.welcomeShown === 'boolean') state.welcomeShown = d.welcomeShown;
       if (typeof d.autoArchive === 'boolean') state.autoArchive = d.autoArchive;
       if (typeof d.aiDisabled === 'boolean') state.aiDisabled = d.aiDisabled;
+      if (typeof d.schedSaved === 'boolean') state.schedSaved = d.schedSaved;
       // Фильтр и день с прошлых данных могут не подходить новым, поэтому сбрасываем.
       state.filter = 'all';
       state.curDay = 1;
@@ -5130,10 +5418,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const raw = String(v ?? '').replace(/\s+/g, ' ').trim();
       if (!raw) return '';
 
-      const lower = raw.toLowerCase();
-      if (['предмет', 'предмет:', 'окт.', 'окт', 'день', 'дни', 'расписание', 'расписание:'].includes(lower)) return '';
-      if (lower === 'другое' || lower === 'другое:') return 'другое';
-      if (lower.includes('параграф') || lower.includes('упражн') || lower.includes('домаш') || lower.includes('задание') || lower.includes('страница')) return 'другое';
+       const lower = raw.toLowerCase();
+       if (['предмет', 'предмет:', 'окт.', 'окт', 'день', 'дни', 'расписание', 'расписание:', 'другое', 'другое:'].includes(lower)) return '';
+       if (lower.includes('параграф') || lower.includes('упражн') || lower.includes('домаш') || lower.includes('задание') || lower.includes('страница')) return '';
       if (/^(?:\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{4}-\d{1,2}-\d{1,2})(?:\s*г\.?|\s*года?)?$/i.test(lower)) return '';
       if (/^(?:(?:пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)[,\s]+)?\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4}\s*г?\.?)?$/i.test(lower)) return '';
       if (/^(?:(?:пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)[,\s]+)?\d{1,2}\s+(?:янв|фев|мар|апр|мая?|июн|июл|авг|сен|сент|окт|ноя|дек)\.?(?:\s+\d{2,4}\s*г?\.?)?$/i.test(lower)) return '';
@@ -5150,25 +5437,23 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         .replace(/[\r\n]+/g, ' ')
         .trim();
 
-      if (!s) return '';
-      const sLower = s.toLowerCase();
-      if (sLower === 'другое' || sLower === 'другое:') return 'другое';
-      if (
-        sLower.includes('россия мои горизонты') ||
-        sLower.includes('разговоры о важном') ||
-        sLower.includes('классный час') ||
-        sLower.startsWith('ров') ||
-        sLower === 'труды' ||
-        sLower === 'труды.'
-      ) {
-        return '';
-      }
+       if (!s) return '';
+       const sLower = s.toLowerCase();
+       if (sLower === 'другое' || sLower === 'другое:') return '';
+       if (
+         sLower.includes('россия мои горизонты') ||
+         sLower.includes('разговоры о важном') ||
+         sLower.includes('классный час') ||
+         sLower.startsWith('ров')
+       ) {
+         return '';
+       }
 
-      // Также вычищаем прилипшие инициалы учителей в конце (например: "Андрющенко М.Ф." или "Андрющенко М.Ф. Нет")
-      s = s.replace(/\s+[А-ЯЁа-яё\-]+\s+[А-ЯЁ]\s*\.\s*[А-ЯЁ]\s*\.?(?:\s+нет)?$/iu, '').trim();
-      if (['ка', 'ка.', 'нет', 'нет.', 'окт', 'окт.'].includes(sLower)) return '';
-      if (/\d{1,2}:\d{2}/.test(s)) return '';
-      if (/\b(?:гр|группа|кабинет|учитель|преподаватель|автор|сотрудник)\b/i.test(s)) return '';
+       // Также вычищаем прилипшие инициалы учителей в конце (например: "Андрющенко М.Ф." или "Андрющенко М.Ф. Нет")
+       s = s.replace(/\s+[А-ЯЁа-яё\-]+\s+[А-ЯЁ]\s*\.\s*[А-ЯЁ]\s*\.?(?:\s+нет)?$/iu, '').trim();
+       if (['ка', 'ка.', 'нет', 'нет.', 'окт', 'окт.'].includes(s.toLowerCase())) return '';
+       if (/\d{1,2}:\d{2}/.test(s)) return '';
+       if (/(?:^|[^\p{L}\p{N}])(?:гр|группа|кабинет|учитель|преподаватель|автор|сотрудник)(?=[^\p{L}\p{N}]|$)/iu.test(s)) return '';
       if (!/[A-Za-zА-ЯЁа-яё]/.test(s)) return '';
       if (!/^[A-Za-zА-ЯЁа-яё0-9/.,&+\-()\s]+$/.test(s)) return '';
       if (s.length < 2) return '';
@@ -5477,17 +5762,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('editForm').addEventListener('submit', saveEditTask);
 
       $('addDay').addEventListener('change', () => fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value));
-      $('addSubj').addEventListener('change', () => {
-        toggleOther($('addSubj'), $('addSubjOther'));
-        const subj = resolveSubj($('addSubj'), $('addSubjOther'));
-        if (subj && subj !== 'другое') {
-          const autoDue = getNextLessonDate(subj);
-          if (autoDue && (!$('addDue').value || $('addDue').value === tomorrowStr())) {
-            $('addDue').value = autoDue;
-            $('addDue').dataset.parserAuto = '1';
-          }
-        }
-      });
+       $('addSubj').addEventListener('change', () => {
+         toggleOther($('addSubj'), $('addSubjOther'));
+         const subj = resolveSubj($('addSubj'), $('addSubjOther'));
+         if (subj && subj !== 'самостоятельно') {
+           const autoDue = getNextLessonDate(subj);
+           if (autoDue && !$('addDue').dataset.userLocked) {
+             $('addDue').value = autoDue;
+             $('addDue').dataset.parserAuto = '1';
+           }
+         }
+       });
       $('addText').addEventListener('input', e => parseTaskNaturalInput(e.target.value));
       $('addText').addEventListener('blur', e => parseTaskNaturalInput(e.target.value, { commit: true }));
 
@@ -5595,17 +5880,84 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     // ---------- Онбординг-тултипы ----------
     let tourTooltipEl = null;
+    let currentTourTarget = null;
     let currentTourIndex = 0;
+    let tourStepTimer = null;
+    let _tourScrollHandler = null;
+    let _tourResizeHandler = null;
 
     function removeTourTooltip() {
       if (tourTooltipEl) {
         tourTooltipEl.remove();
         tourTooltipEl = null;
       }
+      currentTourTarget = null;
+      _removeTourListeners();
     }
 
     function dismissTour() {
+      clearTimeout(tourStepTimer);
+      tourStepTimer = null;
       removeTourTooltip();
+    }
+
+    function _removeTourListeners() {
+      if (_tourScrollHandler) {
+        window.removeEventListener('scroll', _tourScrollHandler);
+        _tourScrollHandler = null;
+      }
+      if (_tourResizeHandler) {
+        window.removeEventListener('resize', _tourResizeHandler);
+        _tourResizeHandler = null;
+      }
+    }
+
+    function repositionTourTooltip() {
+      if (!tourTooltipEl || !currentTourTarget) return;
+      const rect = currentTourTarget.getBoundingClientRect();
+      const tipRect = tourTooltipEl.getBoundingClientRect();
+
+      // Если элемент ушёл за экран — прячем тултип
+      if (rect.bottom < 0 || rect.top > window.innerHeight) {
+        tourTooltipEl.style.opacity = '0';
+        return;
+      }
+      tourTooltipEl.style.opacity = '1';
+
+      // Определяем направление стрелки
+      const bottomSpace = window.innerHeight - rect.bottom - 85;
+      const arrowBottom = bottomSpace < 160;
+      tourTooltipEl.classList.remove('arrow-top', 'arrow-bottom');
+      tourTooltipEl.classList.add(arrowBottom ? 'arrow-bottom' : 'arrow-top');
+
+      // Рассчитываем позицию
+      const gap = 12;
+      let top = 0;
+      if (arrowBottom) {
+        top = rect.top - tipRect.height - gap;
+        if (top < gap) top = rect.bottom + gap;
+      } else {
+        top = rect.bottom + gap;
+        if (top + tipRect.height > window.innerHeight - gap) top = rect.top - tipRect.height - gap;
+      }
+      top = Math.max(gap, Math.min(window.innerHeight - tipRect.height - gap, top));
+
+      const left = Math.max(gap, Math.min(window.innerWidth - tipRect.width - gap, rect.left + rect.width / 2 - tipRect.width / 2));
+
+      tourTooltipEl.style.top = `${top}px`;
+      tourTooltipEl.style.left = `${left}px`;
+
+      // Стрелка по центру target
+      const arrowX = Math.max(16, Math.min(tipRect.width - 16, (rect.left + rect.width / 2) - left));
+      tourTooltipEl.style.setProperty('--arrow-x', `${arrowX}px`);
+    }
+
+    function _addTourListeners() {
+      _removeTourListeners();
+      _tourScrollHandler = repositionTourTooltip;
+      _tourResizeHandler = repositionTourTooltip;
+      window.addEventListener('scroll', _tourScrollHandler, { passive: true });
+      window.addEventListener('resize', _tourResizeHandler, { passive: true });
     }
 
     function showTourTooltip(targetEl, text, title, stepNum, totalSteps, arrowPos = 'bottom', nextCallback = null) {
@@ -5615,7 +5967,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         return;
       }
 
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      targetEl.scrollIntoView({ behavior: 'instant', block: 'nearest', inline: 'nearest' });
+      currentTourTarget = targetEl;
 
       const rect = targetEl.getBoundingClientRect();
       const tip = document.createElement('div');
@@ -5633,21 +5986,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       document.body.appendChild(tip);
       tourTooltipEl = tip;
 
-      const tipRect = tip.getBoundingClientRect();
-      let left = rect.left + rect.width / 2 - tipRect.width / 2;
-      left = Math.max(12, Math.min(window.innerWidth - tipRect.width - 12, left));
-
-      const arrowX = Math.max(16, Math.min(tipRect.width - 16, (rect.left + rect.width / 2) - left));
-      tip.style.setProperty('--arrow-x', `${arrowX}px`);
-
-      let top = 0;
-      if (arrowPos === 'bottom') {
-        top = Math.max(10, rect.top - tipRect.height - 12);
-      } else {
-        top = Math.min(window.innerHeight - tipRect.height - 10, rect.bottom + 12);
-      }
-      tip.style.left = `${left}px`;
-      tip.style.top = `${top}px`;
+      // Сразу позиционируем и вешаем слушатели
+      _addTourListeners();
+      repositionTourTooltip();
 
       $('tourNextBtn').onclick = () => {
         if (nextCallback) nextCallback();
@@ -5659,51 +6000,44 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       {
         tab: 'overview',
         getTarget: () => navBtn('overview'),
-        arrow: 'bottom',
-        title: '📊 сводка дня',
-        text: 'здесь виден общий прогресс, количество открытых уроков и расписание на всю рабочую пятидневку.'
+        title: '📊 Главный экран',
+        text: 'Твой пульс дня: сколько задач висит, сколько закрыто и расписание на неделю.'
       },
       {
         tab: 'add',
         getTarget: () => $('addText'),
-        arrow: 'top',
-        title: '✨ умный ввод',
-        text: 'не нужно вручную выбирать дату и предмет: просто напиши «по алгебре завтра номер 42» — система всё поймёт сама.'
+        title: '✨ Умный ввод',
+        text: 'Пиши как другу: «завтра алгебра номер 45» — предмет, сложность и дата определятся сами.'
       },
       {
         tab: 'schedule',
         getTarget: () => document.querySelector('#view-schedule .glass[onclick*="importScheduleFileTop"]'),
-        arrow: 'top',
-        title: '📅 график и excel',
-        text: 'заполняй уроки вручную или импортируй школьное расписание прямо из файла .xls / .xlsx в один клик (вручную - для всех. .xls - только дневник.ру)'
+        title: '📅 Расписание уроков',
+        text: 'Забей уроки на неделю руками или закинь файл расписания из электронного дневника.'
       },
       {
         tab: 'tasks',
         getTarget: () => document.querySelector('#filterChips .chip-action'),
-        arrow: 'top',
-        title: '⚡ авто-сортировка',
-        text: 'кнопка «по срочности» расставит задачи сама: чем ближе сдача и сложнее урок, тем выше он окажется в списке.'
+        title: '⚡ Сортировка дел',
+        text: 'Одна кнопка — и горящие дедлайны со сложными предметами взлетают на самый верх.'
       },
       {
         tab: 'tasks',
         getTarget: () => document.querySelector('[data-act="focus"]') || $('tasksList'),
-        arrow: 'top',
-        title: '🎯 фокус-сессия',
-        text: 'запускай таймер на задаче: после работы система предложит умную разминку для глаз или кистей под тип предмета.'
+        title: '🎯 Фокус-таймер',
+        text: 'Запускай таймер на задаче. После работы StudyFlow сам подберет разминку под нагрузку.'
       },
       {
         tab: 'overview',
         getTarget: () => $('toast'),
-        arrow: 'top',
-        title: '⚡ dynamic island',
-        text: 'верхняя капсула — живая. во время учебы таймер втягивается прямо сюда, освобождая экран.'
+        title: '⚡ Dynamic Island',
+        text: 'Сверни таймер — он втянется в эту верхнюю капсулу и не будет закрывать приложение.'
       },
       {
         tab: 'overview',
         getTarget: () => document.querySelector('.dock-settings-btn'),
-        arrow: 'bottom',
-        title: '⚙️ настройки и облако',
-        text: 'здесь живут 5 тем liquid glass, синхронизация supabase, системные push-уведомления и автоархивация.'
+        title: '🎨 Твой стиль и облако',
+        text: 'Здесь живут темы Liquid Glass, вход в аккаунт и переключатели режимов.'
       }
     ];
 
@@ -5717,7 +6051,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         tab(step.tab, navBtn(step.tab));
       }
 
-      setTimeout(() => {
+      clearTimeout(tourStepTimer);
+      tourStepTimer = setTimeout(() => {
         const el = step.getTarget();
         if (!el) {
           runTourStep(index + 1);
@@ -5741,7 +6076,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!force && count >= 2) return;
       if (!force) writeRaw('ep_tour_launches', String(count + 1));
 
-      setTimeout(() => {
+      clearTimeout(tourStepTimer);
+      tourStepTimer = setTimeout(() => {
         runTourStep(0);
       }, 1000);
     }
@@ -5750,21 +6086,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       initSupabase();
       load();
       updateAIFeatureVisibility();
+      updateAddTabVisibility();
       applyAppearance();
       bindEvents();
       initMiniDrag();
+      checkAIAvailability();
 
       // Две вкладки держали свой state и затирали работу друг друга при save().
       // Синхронизируемся: перечитываем данные и перерисовываем экраны.
-      window.addEventListener('storage', e => {
-        if (!e.key || !e.key.startsWith('ep_')) return;
-        load();
-        applyAppearance();
-        renderAll();
-        // Расписание и списки предметов тоже могли измениться в другой вкладке.
-        loadSchedDay();
-        fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-      });
+       window.addEventListener('storage', e => {
+         if (!e.key || !e.key.startsWith('ep_')) return;
+         const prevOther = $('addSubjOther').value;
+         load();
+         applyAppearance();
+         renderAll();
+         // Расписание и списки предметов тоже могли измениться в другой вкладке.
+         loadSchedDay();
+         fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+         if ($('addSubj').value === 'самостоятельно' && prevOther) {
+           $('addSubjOther').value = prevOther;
+         }
+       });
 
       fillSubjects($('addSubj'), $('addSubjOther'), '');
       fillSubjects($('editSubj'), $('editSubjOther'), '');
@@ -5785,11 +6127,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const startMin = sH * 60 + sM;
         const endMin = eH * 60 + eM;
 
-        resolvedStart = curMin < startMin ? 'overview' :
-                        curMin < endMin ? 'schedule' :
-                        'tasks';
-      }
-      tab(resolvedStart, navBtn(resolvedStart));
+         resolvedStart = curMin < startMin ? 'overview' :
+                         curMin < endMin ? (state.schedSaved ? 'overview' : 'schedule') :
+                         'tasks';
+       }
+       if (resolvedStart === 'schedule' && state.schedSaved) resolvedStart = 'overview';
+       tab(resolvedStart, navBtn(resolvedStart));
 
       checkAutoArchive();
 
@@ -5828,6 +6171,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function closeWelcomeModal() {
       const m = $('welcomeModal');
       if (m) { m.classList.remove('active'); m.setAttribute('hidden', ''); }
+      if (state.welcomeShown) {
+        state.welcomeShown = false;
+        if ($('setShowWelcome')) $('setShowWelcome').checked = false;
+        save();
+      }
       startOnboardingTour();
     }
 
