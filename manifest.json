@@ -1,6 +1,6 @@
 {
-  "short_name": "eduplan",
-  "name": "eduplan — цифровой школьный планировщик",
+  "short_name": "studyflow",
+  "name": "studyflow — цифровой школьный планировщик",
   "description": "школьный планировщик с фокус-таймером и синхронизацией",
   "icons": [
     {
@@ -19,12 +19,15 @@
       "src": "./icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "./",
   "background_color": "#090b14",
   "theme_color": "#090b14",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "lang": "ru",
+  "scope": "./",
+  "id": "./"
 }

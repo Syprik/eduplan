@@ -470,6 +470,9 @@
       transform: translate3d(0, 0, 0);
       pointer-events: auto;
     }
+    .brand.island .brand-notice {
+      display: none !important;
+    }
     #toastMsg {
       flex: 0 1 auto; max-width: min(62vw, 460px);
       color: var(--text); font-size: 12.5px; font-weight: 700; text-align: center;
@@ -519,14 +522,6 @@
     }
 
     /* Мягкий отскок при поимке таймера (без раздувания) */
-    @keyframes islandCatch {
-      0% { transform: scale(0.95); }
-      50% { transform: scale(1.035); }
-      100% { transform: scale(1); }
-    }
-    .brand.island.is-caught {
-      animation: islandCatch 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    }
     .welcome-wordmark {
       display: inline-block;
       font-family: 'Nunito Sans', sans-serif;
@@ -577,6 +572,7 @@
 
     .view-section {
       display: none;
+      touch-action: pan-y;
     }
 
     .view-section.active {
@@ -760,7 +756,6 @@
     body.ai-unavailable #btnRefreshDayReview,
     body.ai-unavailable #aiDayReviewBanner,
     body.ai-unavailable #aiSettingsGroup,
-    body.ai-unavailable .task-subtasks,
     body.ai-unavailable [data-act="decompose"] {
       display: none !important;
     }
@@ -770,7 +765,22 @@
       margin-top: 2px; padding-top: 12px;
       border-top: 1px solid var(--border);
     }
-    .task-actions .btn-act { flex: 0 0 auto; }
+    .task-actions .btn-act { flex: 0 0 auto; position: relative; }
+    .ai-dot {
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .ai-dot-ai {
+      background: #ff5b64;
+      box-shadow: 0 0 5px rgba(255,91,100,0.6);
+    }
+    .ai-dot-local {
+      background: #06d6a0;
+      box-shadow: 0 0 5px rgba(6,214,160,0.6);
+    }
     .break-card {
       background: var(--card-sub);
       border: 1px dashed rgba(6, 214, 160, 0.4);
@@ -1459,7 +1469,7 @@
            <div style="font-size:10px;font-weight:800;letter-spacing:.4px;color:var(--accent);margin-bottom:3px;">AI-итог дня</div>
            <strong id="aiDayReviewText" style="font-weight:800;">Нажмите ↻, чтобы получить короткий итог.</strong>
          </div>
-         <button type="button" class="btn-act" id="btnRefreshDayReview" onclick="requestAIDayReview()" title="обновить итог дня" aria-label="обновить итог дня">↻</button>
+          <button type="button" class="btn-act" id="btnRefreshDayReview" onclick="requestAIDayReview()" title="обновить итог дня" aria-label="обновить итог дня">↻<span class="ai-dot ai-dot-ai" id="dayReviewIndicator" style="display:none;" title="ответ AI"></span></button>
        </div>
        <div class="chips" id="periodChips">
         <button class="chip" data-p="day" onclick="setPeriod('day', this)">день</button>
@@ -1526,7 +1536,7 @@
             <button type="button" class="chip" onclick="applyDemoTask('завтра алгебра №45 и 46')">⚡ алгебра на завтра</button>
             <button type="button" class="chip" onclick="applyDemoTask('в пятницу история доклад')">📖 доклад по истории</button>
             <button type="button" class="chip" onclick="applyDemoTask('к понедельнику литература прочитать стр 120')">☕ литература устно</button>
-            <button type="button" class="chip chip-action" id="batchAiChip" onclick="openBatchAiModal()">✨ вставить текст из чата</button>
+            <button type="button" class="chip chip-action" id="batchAiChip" onclick="openBatchAiModal()" title="Вставить текст из чата и найти задания">✨ вставить текст из чата</button>
           </div>
           <div class="form-group">
             <label class="label" for="addText">содержание задания:</label>
@@ -1748,7 +1758,7 @@
         <div class="settings-pill-default" id="setModalFooterDefault">
           <span class="settings-pill-logo">❖</span>
           <span aria-hidden="true">•</span>
-          <span class="settings-pill-ver">studyflow v7.0</span>
+          <span class="settings-pill-ver">studyflow v7.5</span>
         </div>
         <div class="settings-pill-notice" id="setModalFooterNotice" aria-live="polite">
           <span id="setNoticeIcon" class="settings-notice-icon"></span>
@@ -1961,6 +1971,7 @@
         }
       });
       sbClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'TOKEN_REFRESHED') return;
         console.log('auth state change:', event, session ? 'logged in' : 'logged out');
         checkUser();
       });
@@ -2099,9 +2110,10 @@
            try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
            try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
            try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
-           try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
+            try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
+            state.doneTotal = Math.max(state.doneTotal, state.archive.length);
 
-           // Фиксируем скачанное в локальном localStorage
+            // Фиксируем скачанное в локальном localStorage
            for (const k of Object.keys(c)) {
              writeRaw(k, c[k]);
            }
@@ -2506,7 +2518,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         state.notif = true;
         save();
         showToast('системные уведомления включены', '🔔');
-        sendNotification('eduplan ❖', { body: 'уведомления успешно подключены!' });
+        sendNotification('studyflow ❖', { body: 'уведомления успешно подключены!' });
       } else {
         state.notif = false;
         save();
@@ -3157,19 +3169,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   const subj = String(t.subj || 'самостоятельно').trim().slice(0, 60);
   const rawDue = typeof t.due === 'string' ? t.due.trim() : '';
   const due = isValidDate(rawDue) ? rawDue : '';
-  const obj = {
-    id, day, subj, text, due,
-    prio: VALID_PRIO.includes(t.prio) ? t.prio : 'normal',
-    comp: VALID_COMP.includes(t.comp) ? t.comp : 'medium',
-    repeat: t.repeat === 'weekly' ? 'weekly' : null
-  };
-  if (Array.isArray(t.subtasks)) {
-    obj.subtasks = t.subtasks
-      .filter(item => item && typeof item === 'object' && typeof item.text === 'string')
-      .map(item => ({ text: item.text.trim().slice(0, 500), done: item.done === true }))
-      .filter(item => item.text)
-      .slice(0, 30);
-  }
+   const obj = {
+     id, day, subj, text, due,
+     prio: VALID_PRIO.includes(t.prio) ? t.prio : 'normal',
+     comp: VALID_COMP.includes(t.comp) ? t.comp : 'medium',
+     repeat: t.repeat === 'weekly' ? 'weekly' : null
+   };
+   if (Array.isArray(t.subtasks)) {
+     obj.subtasks = t.subtasks
+       .filter(item => item && typeof item === 'object' && typeof item.text === 'string')
+       .map(item => ({ text: item.text.trim().slice(0, 500), done: item.done === true }))
+       .filter(item => item.text)
+       .slice(0, 30);
+     obj.subtasksSource = t.subtasksSource || null;
+   }
   if (t.closedAt) obj.closedAt = String(t.closedAt);
   if (t.closedReason === 'completed' || t.closedReason === 'overdue') {
     obj.closedReason = t.closedReason;
@@ -3732,7 +3745,23 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           if (!rawTask || typeof rawTask !== 'object' || Array.isArray(rawTask)) return null;
           let id = newId();
           while (state.tasks.some(task => task.id === id) || state.archive.some(task => task.id === id)) id = newId();
-          return normalizeTask(Object.assign({}, rawTask, { id: id, repeat: null }));
+          let due = typeof rawTask.due === 'string' && isValidDate(rawTask.due.trim()) ? rawTask.due.trim() : '';
+          if (!due && rawTask.subj) due = getNextLessonDate(rawTask.subj);
+          let day = ['1', '2', '3', '4', '5'].includes(String(rawTask.day)) ? String(rawTask.day) : '';
+          if (!day && due && isValidDate(due)) {
+            const wd = new Date(due + 'T00:00:00').getDay() || 7;
+            day = wd <= 5 ? String(wd) : '1';
+          }
+          if (!day && rawTask.subj) {
+            for (let d = 1; d <= 5; d++) {
+              if ((state.schedule[d] || []).some(s => isSameSubjectName(s, rawTask.subj))) {
+                day = String(d);
+                break;
+              }
+            }
+          }
+          if (!day) day = String(state.curDay || 1);
+          return normalizeTask(Object.assign({}, rawTask, { id: id, day: day, due: due, repeat: null }));
         }).filter(Boolean);
         if (!tasks.length) throw new Error('в тексте не найдено заданий');
         if (tasks.length > 150 - state.tasks.length) throw new Error('в плане недостаточно места для всех найденных заданий');
@@ -3835,6 +3864,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const currentTask = state.tasks.find(item => item.id === id);
         if (currentTask) {
           currentTask.subtasks = fallbackSubtasks;
+          currentTask.subtasksSource = 'local';
           save();
           renderTasks();
           showToast('шаги задания готовы');
@@ -3868,6 +3898,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const currentTask = state.tasks.find(item => item.id === id);
         if (!currentTask) return;
         currentTask.subtasks = subtasks;
+        currentTask.subtasksSource = 'ai';
         save();
         showToast('шаги задания готовы');
       } catch (error) {
@@ -3881,6 +3912,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const currentTask = state.tasks.find(item => item.id === id);
         if (currentTask) {
           currentTask.subtasks = fallbackSubtasks;
+          currentTask.subtasksSource = 'local';
           save();
           renderTasks();
           showToast('шаги задания готовы');
@@ -3898,6 +3930,71 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       task.subtasks[index].done = input.checked;
       save();
       renderTasks();
+    }
+
+    function buildTaskCardHtml(t, index, isActive) {
+      const left = daysLeftLabel(t.due);
+      const sd = esc(shortDate(t.due));
+      const daysWeekShort = ['', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+      let dueDayOfWeek = '';
+      if (t.due && isValidDate(t.due)) {
+        const dt = new Date(t.due + 'T00:00:00');
+        dueDayOfWeek = daysWeekShort[dt.getDay() || 7];
+      }
+      const datePrefix = sd ? (dueDayOfWeek ? `${sd} (${dueDayOfWeek})` : sd) : '';
+      const dBadge = !t.due
+        ? '<span class="badge badge-neutral">без срока</span>'
+        : isOverdue(t) ? `<span class="badge badge-danger">${datePrefix ? datePrefix + ' · ' : ''}${esc(left)}</span>`
+        : left === 'сегодня' ? `<span class="badge badge-warning">сегодня (${dueDayOfWeek})</span>`
+        : left === 'завтра' ? `<span class="badge badge-warning">завтра (${dueDayOfWeek})</span>`
+        : left === 'послезавтра' ? `<span class="badge badge-warning">послезавтра (${dueDayOfWeek})</span>`
+        : `<span class="badge badge-info">${datePrefix} · ${esc(left)}</span>`;
+      const id = esc(t.id);
+      const isDecomposing = decomposingTaskIds.has(t.id);
+
+      // Подзадачи
+      const subtasksHtml = !state.aiDisabled && Array.isArray(t.subtasks) && t.subtasks.length
+        ? '<div class="task-subtasks" aria-label="шаги задания">' + t.subtasks.map((item, subtaskIndex) =>
+            '<label class="task-subtask' + (item.done ? ' is-done' : '') + '">' +
+            '<input type="checkbox" data-act="toggle-subtask" data-id="' + id + '" data-subtask-index="' + subtaskIndex + '"' + (item.done ? ' checked' : '') + ' aria-label="' + (item.done ? 'отметить шаг невыполненным' : 'отметить шаг выполненным') + '">' +
+            '<span>' + esc(item.text) + '</span></label>'
+          ).join('') + '</div>'
+        : '';
+
+      // Кнопка «шаги» с индикатором
+      const decomposeButton = state.aiDisabled
+        ? ''
+        : '<button class="btn-act" data-act="decompose" data-id="' + id + '" title="Разбить на шаги"' + (isDecomposing ? ' disabled aria-busy="true"' : '') + '>' +
+          (isDecomposing ? '<span class="ai-inline-spinner" aria-hidden="true"></span>шаги' : '✨ шаги') +
+          (t.subtasksSource === 'ai' ? '<span class="ai-dot ai-dot-ai" title="создано AI"></span>' :
+           t.subtasksSource === 'local' ? '<span class="ai-dot ai-dot-local" title="локальный чеклист"></span>' : '') +
+          '</button>';
+
+      // Карточка — собираем в правильном порядке, без indexOf/slice
+      return `
+        <div class="glass task-card ${PRIO[t.prio].c}"${isActive ? ' data-active="1"' : ''}>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <span class="badge badge-prio">${esc(t.subj)}</span>
+            <span style="display:flex;gap:6px;align-items:center;">
+              ${isActive ? '<span class="badge" style="background:rgba(142,97,255,0.25);color:var(--accent);">в фокусе</span>' : ''}
+              <span class="badge ${PRIO[t.prio].b}">${PRIO[t.prio].text}</span>
+            </span>
+          </div>
+          <div style="font-size:15px;font-weight:700;line-height:1.3;white-space:pre-wrap;">${esc(t.text)}</div>
+          ${subtasksHtml}
+          <div class="task-meta">
+            ${dBadge}
+            <span title="${esc(COMP[t.comp].hint)}">${COMP[t.comp].text}</span>
+            ${t.repeat === 'weekly' ? '<span class="badge badge-info" title="повторяется каждую неделю">🔄 еженедельно</span>' : ''}
+          </div>
+          <div class="task-actions">
+            ${decomposeButton}
+            <button class="btn-act btn-success" data-act="done" data-id="${id}" title="выполнить" aria-label="выполнить">готово</button>
+            <button class="btn-act btn-go" data-act="focus" data-id="${id}">таймер</button>
+            <button class="btn-act" data-act="edit" data-id="${id}" title="редактировать" aria-label="редактировать">редактировать</button>
+            <button class="btn-act btn-danger" data-act="del" data-id="${id}" title="удалить" aria-label="удалить">удалить</button>
+          </div>
+        </div>`;
     }
 
     function renderTasks() {
@@ -3945,65 +4042,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
 
       box.innerHTML = list.map((t, index) => {
-        // Рядом с датой — понятная подпись: «завтра» читается быстрее, чем 2026-10-20.
-        const left = daysLeftLabel(t.due);
-        const sd = esc(shortDate(t.due));
-        const daysWeekShort = ['', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
-        let dueDayOfWeek = '';
-        if (t.due && isValidDate(t.due)) {
-          const dt = new Date(t.due + 'T00:00:00');
-          dueDayOfWeek = daysWeekShort[dt.getDay() || 7];
-        }
-        const datePrefix = sd ? (dueDayOfWeek ? `${sd} (${dueDayOfWeek})` : sd) : '';
-        const dBadge = !t.due
-          ? '<span class="badge badge-neutral">без срока</span>'
-          : isOverdue(t) ? `<span class="badge badge-danger">${datePrefix ? datePrefix + ' · ' : ''}${esc(left)}</span>`
-          : left === 'сегодня' ? `<span class="badge badge-warning">сегодня (${dueDayOfWeek})</span>`
-          : left === 'завтра' ? `<span class="badge badge-warning">завтра (${dueDayOfWeek})</span>`
-          : left === 'послезавтра' ? `<span class="badge badge-warning">послезавтра (${dueDayOfWeek})</span>`
-          : `<span class="badge badge-info">${datePrefix} · ${esc(left)}</span>`;
-        const id = esc(t.id);
         const isActive = timerIsActive() && tState.id === t.id;
-        const isDecomposing = decomposingTaskIds.has(t.id);
-        const subtasksHtml = !state.aiDisabled && Array.isArray(t.subtasks) && t.subtasks.length
-          ? '<div class="task-subtasks" aria-label="шаги задания">' + t.subtasks.map((item, subtaskIndex) =>
-              '<label class="task-subtask' + (item.done ? ' is-done' : '') + '">' +
-              '<input type="checkbox" data-act="toggle-subtask" data-id="' + id + '" data-subtask-index="' + subtaskIndex + '"' + (item.done ? ' checked' : '') + ' aria-label="' + (item.done ? 'отметить шаг невыполненным' : 'отметить шаг выполненным') + '">' +
-              '<span>' + esc(item.text) + '</span></label>'
-            ).join('') + '</div>'
-          : '';
-        const decomposeButton = state.aiDisabled ? '' : '<button class="btn-act" data-act="decompose" data-id="' + id + '" title="Разбить на шаги"' + (isDecomposing ? ' disabled aria-busy="true"' : '') + '>' +
-          (isDecomposing ? '<span class="ai-inline-spinner" aria-hidden="true"></span>шаги' : '✨ шаги') + '</button>';
-        const taskCard = `
-          <div class="glass task-card ${PRIO[t.prio].c}"${isActive ? ' data-active="1"' : ''}>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-              <span class="badge badge-prio">${esc(t.subj)}</span>
-              <span style="display:flex;gap:6px;align-items:center;">
-                ${isActive ? '<span class="badge" style="background:rgba(142,97,255,0.25);color:var(--accent);">в фокусе</span>' : ''}
-                <span class="badge ${PRIO[t.prio].b}">${PRIO[t.prio].text}</span>
-              </span>
-            </div>
-            <div style="font-size:15px;font-weight:700;line-height:1.3;white-space:pre-wrap;">${esc(t.text)}</div>
-            <div class="task-meta">
-              ${dBadge}
-              <span title="${esc(COMP[t.comp].hint)}">${COMP[t.comp].text}</span>
-              ${t.repeat === 'weekly' ? '<span class="badge badge-info" title="повторяется каждую неделю">🔄 еженедельно</span>' : ''}
-            </div>
-            <div class="task-actions">
-              <button class="btn-act btn-success" data-act="done" data-id="${id}" title="выполнить" aria-label="выполнить">готово</button>
-              <button class="btn-act btn-go" data-act="focus" data-id="${id}">таймер</button>
-              <button class="btn-act" data-act="edit" data-id="${id}" title="редактировать" aria-label="редактировать">редактировать</button>
-              <button class="btn-act btn-danger" data-act="del" data-id="${id}" title="удалить" aria-label="удалить">удалить</button>
-            </div>
-          </div>`;
-         const editActionAnchor = '              <button class="btn-act" data-act="edit"';
-         const editActionIndex = taskCard.indexOf(editActionAnchor);
-         const taskCardWithActions = taskCard.slice(0, editActionIndex) + decomposeButton + '\n' + taskCard.slice(editActionIndex);
-         const metaAnchor = '            <div class="task-meta">';
-         const metaIndex = taskCardWithActions.indexOf(metaAnchor);
-         const taskCardWithSubtasks = metaIndex !== -1
-           ? taskCardWithActions.slice(0, metaIndex) + subtasksHtml + taskCardWithActions.slice(metaIndex)
-           : taskCardWithActions;
+        const card = buildTaskCardHtml(t, index, isActive);
         const nextComp = list[index + 1]?.comp || t.comp || 'medium';
         const breakCard = index < list.length - 1 && index % 2 === 0
           ? `<div class="break-card">
@@ -4014,7 +4054,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
               <button class="btn-act btn-success" onclick="startStandaloneBreak('${nextComp}')">размяться</button>
             </div>`
           : '';
-        return taskCardWithSubtasks + breakCard;
+        return card + breakCard;
       }).join('');
     }
 
@@ -4195,11 +4235,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let timerInt = null;
     let lastSaveAt = 0;
     let wakeLock = null;
+    let lastRenderedSec = -1;
     let tState = { id: null, phase: 'work', cycle: 1, taskComp: 'medium', totalMs: 0, leftMs: 0, endAt: 0, lastTs: 0, running: false };
     let breakPlan = [];
     let breakStepIdx = 0;
     let breakStepLeftMs = 0;
     let breakStepTotalMs = 0;
+    let breakStepPauseUntil = 0;
     let breakRoutineComplete = false;
     let breakRoutineLoading = false;
     let breakRoutineRequestId = 0;
@@ -4255,20 +4297,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.endAt = now + tState.leftMs;
       tState.lastTs = now;
       tState.running = phase !== 'break';
-      if (phase === 'break') {
-        initBreakRoutine();
-      } else {
-        timerInt = setInterval(tick, 500);
-      }
+
       updatePhaseUI();
       updateTimerUI();
+
       if (phase === 'break') {
         setTimerBtn(false);
         $('timerToggleBtn').textContent = 'подготовка...';
         setBreakTimerControlsDisabled(true);
+        initBreakRoutine();
       } else {
         setTimerBtn(true);
+        timerInt = setInterval(tick, 500);
       }
+
       keepAwake(phase !== 'break');
       save();
     }
@@ -4294,6 +4336,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       syncTimer();
       if (tState.leftMs <= 0) { onPhaseEnd(); return; }
       if (tState.phase === 'break' && !breakRoutineComplete && tState.running) {
+        // Если ещё идёт пауза перед упражнением — не тикаем, только обновляем UI
+        if (Date.now() < breakStepPauseUntil) {
+          updateBreakUI();
+          updateTimerUI();
+          return;
+        }
         breakStepLeftMs -= 500;
         if (breakStepLeftMs <= 0) {
           beep(620, 0.15);
@@ -4459,7 +4507,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
       const frac = tState.totalMs ? tState.leftMs / tState.totalMs : 0;
       const compactBar = $('timerCompactBar');
-      if (compactBar && getComputedStyle(compactBar).display !== 'none') {
+      if (compactBar && tState.phase === 'break') {
         $('compactDigits').textContent = timerDigitsHidden ? '····' : timeTxt;
         $('compactBarFill').style.width = `${frac * 100}%`;
       }
@@ -4469,10 +4517,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       if (tState.running || tState.leftMs > 0) {
         const subj = tState.subj || (tState.phase === 'break' ? 'перерыв' : 'фокус');
-        document.title = `${timeTxt} ❖ ${subj}`;
-        updateDynamicFavicon(frac, tState.phase === 'break');
+        if (sec !== lastRenderedSec) {
+          document.title = `${timeTxt} ❖ ${subj}`;
+          updateDynamicFavicon(frac, tState.phase === 'break');
+          lastRenderedSec = sec;
+        }
       } else {
         restoreAppTitleAndFavicon();
+        lastRenderedSec = -1;
       }
     }
 
@@ -4906,7 +4958,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (state.aiDisabled || aiUnreachable) throw new Error('AI-функции отключены');
       let timeoutId;
       try {
-        const { data, error } = await Promise.race([
+        const today = getLocalToday();
+        const todayDone = (state.archive || [])
+          .filter(a => a.closedAt === today && a.closedReason === 'completed')
+          .slice(0, 5)
+          .map(a => `${a.subj}: ${a.text}`);
+        const res = await Promise.race([
           sbClient.functions.invoke('ai-coach', {
             body: {
               action: 'break',
@@ -4914,13 +4971,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
               task: tState.taskText || 'Задание',
               cycle: tState.cycle || 1,
               time: new Date().getHours() < 17 ? 'день' : 'вечер',
-              breakMinutes: getBreakDurationMinutes(tState.taskComp)
+              breakMinutes: getBreakDurationMinutes(tState.taskComp),
+              todayCompleted: todayDone
             }
           }),
           new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('AI-план не получен за 3.5 секунды')), 3500);
+            timeoutId = setTimeout(() => reject(new Error('AI-план не получен за 7 секунд')), 7000);
           })
         ]);
+        if (!res) throw new Error('пустой ответ от ai-coach');
+        const { data, error } = res;
         if (error) throw error;
         const steps = validateBreakSteps(data?.steps);
         if (steps.length < 2) throw new Error('AI вернул некорректный план');
@@ -5040,6 +5100,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       breakStepTotalMs = cur.dur * 1000;
       breakStepLeftMs = breakStepTotalMs;
 
+      // Пауза 3.5 секунды перед стартом упражнения только когда таймер запущен
+      breakStepPauseUntil = tState.running ? Date.now() + 3500 : 0;
+
       // Fade-in только при смене шага
       const stepTitleEl = $('stepTitle');
       const stepDescEl = $('stepDesc');
@@ -5078,15 +5141,28 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (!btn || btn.disabled) return;
       btn.disabled = true;
       btn.classList.add('refresh-spin');
+      const indicator = $('dayReviewIndicator');
+      if (indicator) indicator.style.display = 'none';
       $('aiDayReviewText').innerHTML = '<span class="ai-inline-spinner"></span>анализирую день…';
       try {
+        const todayFocusMin = Math.round((state.focus[getLocalToday()] || 0) / 60000);
         const result = await sbClient.functions.invoke('ai-coach', {
-          body: { action: 'review_day', tasks: state.tasks, archive: state.archive, focus: state.focus, period: state.period }
+          body: {
+            action: 'review_day',
+            completedCount: (state.archive || []).filter(a => a.closedAt === getLocalToday() && a.closedReason === 'completed').length,
+            focusTime: `${todayFocusMin} мин`,
+            overdueCount: state.tasks.filter(isOverdue).length
+          }
         });
         if (state.aiDisabled || aiUnreachable) return;
         if (result.error) throw result.error;
-        const text = result.data?.summary || result.data?.text || 'Пока нет данных для сводки.';
+        const text = result.data?.comment || result.data?.summary || result.data?.text || 'Пока нет данных для сводки.';
         $('aiDayReviewText').textContent = text;
+        if (indicator) {
+          indicator.className = 'ai-dot ai-dot-ai';
+          indicator.style.display = 'inline-block';
+          indicator.title = 'ответ AI';
+        }
       } catch (err) {
         console.error('ошибка AI-сводки дня:', err);
         triggerAiCooldown(15);
@@ -5140,7 +5216,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         $('stepTimer').textContent = '✓';
         $('breakStepProg').style.width = '100%';
         setDisplay('breakStepAction', false);
-        if (!$('btnRefreshAI').disabled) $('btnRefreshAI').disabled = false;
+        $('btnRefreshAI').disabled = false;
         return;
       }
 
@@ -5167,6 +5243,18 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         localIndicator.style.display = 'none';
       }
 
+      // Пауза перед стартом упражнения — показываем живой обратный отсчёт
+      const remainingPause = Math.max(0, Math.ceil((breakStepPauseUntil - Date.now()) / 1000));
+      if (Date.now() < breakStepPauseUntil) {
+        $('stepTitle').textContent = cur.title;
+        $('stepDesc').textContent = cur.desc;
+        $('stepTimer').textContent = remainingPause > 0 ? `${remainingPause}…` : 'go!';
+        $('breakStepProg').style.width = '0%';
+        setDisplay('breakStepAction', false);
+        $('btnRefreshAI').disabled = true; // просто блокируем
+        return;
+      }
+
       $('stepTitle').textContent = cur.title;
       $('stepDesc').textContent = cur.desc;
       const seconds = Math.ceil(breakStepLeftMs / 1000);
@@ -5183,7 +5271,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         : 'следующее упражнение ➔';
       setDisplay('breakStepAction', true);
       actionBtn.disabled = false;
-      if (!$('btnRefreshAI').disabled) $('btnRefreshAI').disabled = false;
+      $('btnRefreshAI').disabled = false;
     }
 
     // Вернулись на вкладку: сверяем отсчёт и заново берём блокировку экрана.
@@ -5415,49 +5503,56 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function normalizeScheduleImportValue(v) {
-      const raw = String(v ?? '').replace(/\s+/g, ' ').trim();
-      if (!raw) return '';
+      let s = String(v ?? '').replace(/\s+/g, ' ').trim();
+      if (!s) return '';
 
-       const lower = raw.toLowerCase();
-       if (['предмет', 'предмет:', 'окт.', 'окт', 'день', 'дни', 'расписание', 'расписание:', 'другое', 'другое:'].includes(lower)) return '';
-       if (lower.includes('параграф') || lower.includes('упражн') || lower.includes('домаш') || lower.includes('задание') || lower.includes('страница')) return '';
-      if (/^(?:\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{4}-\d{1,2}-\d{1,2})(?:\s*г\.?|\s*года?)?$/i.test(lower)) return '';
-      if (/^(?:(?:пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)[,\s]+)?\d{1,2}\s+(?:января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+\d{4}\s*г?\.?)?$/i.test(lower)) return '';
-      if (/^(?:(?:пн|вт|ср|чт|пт|сб|вс|понедельник|вторник|среда|четверг|пятница|суббота|воскресенье)[,\s]+)?\d{1,2}\s+(?:янв|фев|мар|апр|мая?|июн|июл|авг|сен|сент|окт|ноя|дек)\.?(?:\s+\d{2,4}\s*г?\.?)?$/i.test(lower)) return '';
+      // Служебные строки — сразу пустота
+      const lower = s.toLowerCase();
+      if (lower.includes('россия мои горизонты') ||
+          lower.includes('разговоры о важном') ||
+          lower.includes('классный час')) {
+        return '';
+      }
 
-      let s = raw
-        .replace(/^[:;\s\-–—•*\)\(\.;]+/, '')
-        .replace(/\s*\([^)]*\)/g, ' ')
-        .replace(/\s+\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}.*$/gi, '')
-        .replace(/(?:^|\s+)[А-ЯЁA-Z][а-яёa-z]*\s+[А-ЯЁA-Z](?:\.[А-ЯЁA-Z]){1,2}\.?$/u, '')
-        .replace(/(?:^|\s+)[А-ЯЁA-Z][а-яёa-z]*\s+[А-ЯЁA-Z][а-яёa-z]*\s+[А-ЯЁA-Z](?:\.[А-ЯЁA-Z]){1,2}\.?$/u, '')
-        .replace(/\s+\d+\s*(?:гр|группа|кл)\.?/gi, ' ')
-        .replace(/\s+\d{1,2}[A-ZА-ЯЁ]?$/i, '')
-        .replace(/\s+(?:нет|ка)\.?$/i, '')
-        .replace(/[\r\n]+/g, ' ')
-        .trim();
+      // 1. Убираем номер урока в начале: «1.», «2)», «3–», «4.»
+      s = s.replace(/^\s*\d+[\s.)\-–]+/, '');
 
-       if (!s) return '';
-       const sLower = s.toLowerCase();
-       if (sLower === 'другое' || sLower === 'другое:') return '';
-       if (
-         sLower.includes('россия мои горизонты') ||
-         sLower.includes('разговоры о важном') ||
-         sLower.includes('классный час') ||
-         sLower.startsWith('ров')
-       ) {
-         return '';
-       }
+      // 2. Текст в скобках — убираем полностью
+      s = s.replace(/\([^)]*\)|\[[^\]]*\]/g, '');
 
-       // Также вычищаем прилипшие инициалы учителей в конце (например: "Андрющенко М.Ф." или "Андрющенко М.Ф. Нет")
-       s = s.replace(/\s+[А-ЯЁа-яё\-]+\s+[А-ЯЁ]\s*\.\s*[А-ЯЁ]\s*\.?(?:\s+нет)?$/iu, '').trim();
-       if (['ка', 'ка.', 'нет', 'нет.', 'окт', 'окт.'].includes(s.toLowerCase())) return '';
-       if (/\d{1,2}:\d{2}/.test(s)) return '';
-       if (/(?:^|[^\p{L}\p{N}])(?:гр|группа|кабинет|учитель|преподаватель|автор|сотрудник)(?=[^\p{L}\p{N}]|$)/iu.test(s)) return '';
+      // 3. Время уроков: «8:30–9:10»
+      s = s.replace(/\d{1,2}:\d{2}\s*[-–]\s*\d{1,2}:\d{2}/g, '');
+
+      // 4. Кабинеты: «каб. 15», «кабинет 201», «к. 5а», «201а»
+      s = s.replace(/(?:каб\.?|кабинет|к\.?)\s*\d+[a-zа-яё]?/gi, '');
+      // Убираем «класс X» и «группа/подгруппа»
+      s = s.replace(/\s+(?:группа|подгруппа|урок|пара|дистант|электив)(?=[^\p{L}\p{N}]|$)/giu, '');
+
+      // 5. ФИО учителя — универсальная маска:
+      //    «Иванов И.И.», «Иванов Иван Иванович», «И.И. Иванов»
+      s = s.replace(/(?:[А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ]\.){1,2}|(?:[А-ЯЁ]\.){1,2}\s+[А-ЯЁ][а-яё\-]+)/gu, '');
+
+      // 6. Срезай знаки препинания по краям
+      s = s.replace(/^[:;.,\-–—]+|[:;.,\-–—]+$/g, '');
+
+      // 7. Множественные пробелы
+      s = s.replace(/\s{2,}/g, ' ').trim();
+
+      if (!s) return '';
       if (!/[A-Za-zА-ЯЁа-яё]/.test(s)) return '';
-      if (!/^[A-Za-zА-ЯЁа-яё0-9/.,&+\-()\s]+$/.test(s)) return '';
-      if (s.length < 2) return '';
-      return s.replace(/\s{2,}/g, ' ').trim();
+      if (s.length < 3) return '';
+
+      // 8. Привязка к MASTER_SUBJECTS — ищем совпадение по регулярке
+      if (typeof MASTER_SUBJECTS !== 'undefined' && Array.isArray(MASTER_SUBJECTS)) {
+        for (const item of MASTER_SUBJECTS) {
+          if (item && item.regex && item.regex.test(s)) {
+            return item.name;
+          }
+        }
+      }
+
+      // 9. Если предмет не найден в MASTER_SUBJECTS — возвращаем очищенную строку с заглавной буквы
+      return s.charAt(0).toUpperCase() + s.slice(1);
     }
 
     function getDayIndexFromValue(v) {
@@ -5552,6 +5647,45 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       });
     }
 
+    // Приводит ответ AI к {1:[...],2:[...],3:[...],4:[...],5:[...]}
+    // Возвращает null, если данных нет или формат не распознан.
+    function normalizeImportedSchedule(raw) {
+      const out = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+
+      const DAY_MAP = {
+        '1': 1, '2': 2, '3': 3, '4': 4, '5': 5,
+        'пн': 1, 'пон': 1, 'понедельник': 1, 'monday': 1,
+        'вт': 2, 'втор': 2, 'вторник': 2, 'tuesday': 2,
+        'ср': 3, 'сред': 3, 'среда': 3, 'wednesday': 3,
+        'чт': 4, 'чет': 4, 'четверг': 4, 'thursday': 4,
+        'пт': 5, 'пят': 5, 'пятница': 5, 'friday': 5
+      };
+
+      let foundAny = false;
+      for (const [key, value] of Object.entries(raw)) {
+        const normalizedKey = String(key).trim().toLowerCase();
+        const dayNum = DAY_MAP[normalizedKey];
+        if (!dayNum) continue;
+
+        let lessons = [];
+        if (Array.isArray(value)) {
+          lessons = value.map(item => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object') {
+              return item.subject || item.name || item.title || item.lesson || '';
+            }
+            return '';
+          }).map(s => String(s || '').trim()).filter(Boolean);
+        } else if (typeof value === 'string') {
+          lessons = value.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        out[dayNum] = lessons;
+        if (lessons.length) foundAny = true;
+      }
+      return foundAny ? out : null;
+    }
+
     async function importScheduleFromFile(file) {
       if (!file) return;
       if (timerIsActive()) { showToast('завершите или прервите фокус-сессию перед импортом', '!'); return; }
@@ -5573,7 +5707,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       const reader = new FileReader();
       reader.onerror = () => showToast('не удалось прочитать файл расписания', '!');
-      reader.onload = ev => {
+      reader.onload = async ev => {
         try {
           const data = ev.target.result;
           const workbook = XLSX.read(data, { type: 'array', cellDates: true });
@@ -5582,29 +5716,98 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             return;
           }
 
+          // 1. Ищем ПЕРВЫЙ НЕПУСТОЙ лист — он и есть источник данных
+          let targetSheetName = null;
           let bestGrid = [];
           for (const sheetName of workbook.SheetNames) {
             const sheet = workbook.Sheets[sheetName];
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
             if (Array.isArray(rows) && rows.some(row => Array.isArray(row) && row.some(cell => String(cell ?? '').trim()))) {
+              targetSheetName = sheetName;
               bestGrid = rows;
               break;
             }
           }
+          if (!targetSheetName) {
+            showToast('в файле нет данных о расписании', '!');
+            return;
+          }
 
-          const imported = collectImportedScheduleFromGrid(bestGrid);
-          const hasAny = Object.values(imported).some(list => list.length);
-          if (!hasAny) {
+          // 2. CSV для AI — с ТОГО ЖЕ листа, а не с SheetNames[0]
+          const csvText = XLSX.utils.sheet_to_csv(workbook.Sheets[targetSheetName]);
+
+          let importedSchedule = null;
+          let usedAI = false;
+
+          // 3. Пробуем AI с таймаутом (не блокируемся навечно)
+          const aiAvailable = !state.aiDisabled
+            && navigator.onLine
+            && Boolean(sbClient)
+            && Date.now() > (state.aiCooldownUntil || 0);
+
+          if (aiAvailable) {
+            showToast('AI разбирает расписание... ✨');
+            let timeoutId;
+            try {
+              const aiCall = sbClient.functions.invoke('ai-coach', {
+                body: { action: 'parse_schedule', csvText: csvText.slice(0, 10000) }
+              });
+              const timeout = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('AI не ответил за 15 секунд')), 15000);
+              });
+              const { data: aiData, error } = await Promise.race([aiCall, timeout]);
+              clearTimeout(timeoutId);
+
+              if (error) throw error;
+              const normalized = normalizeImportedSchedule(aiData?.schedule);
+              if (normalized) {
+                importedSchedule = normalized;
+                usedAI = true;
+              } else {
+                console.warn('AI schedule parse: некорректный/пустой ответ, откат на локальный парсер', aiData);
+              }
+            } catch (err) {
+              clearTimeout(timeoutId);
+              console.warn('AI schedule parse fallback:', err);
+              // ВАЖНО: cooldown НЕ вызываем — иначе одно кривое расписание
+              // отключит AI-разминку и декомпозицию задач на 15 минут
+            }
+          }
+
+          // 4. Тихий фолбэк на локальный алгоритм
+          if (!importedSchedule) {
+            const localResult = collectImportedScheduleFromGrid(bestGrid);
+            if (Object.values(localResult).some(list => list.length > 0)) {
+              importedSchedule = localResult;
+            }
+          }
+
+          // 5. Финальная проверка: реально ли что-то нашли?
+          if (!importedSchedule || !Object.values(importedSchedule).some(list => list.length)) {
             showToast('не удалось распознать расписание в этом файле', '!');
             return;
           }
 
-          if (!confirm('импортировать расписание из файла? это заменит текущее расписание на выбранных днях.')) return;
+          // 6. Показываем превью ДО применения
+          const perDay = [1, 2, 3, 4, 5].map(d => (importedSchedule[d] || []).length);
+          const total = perDay.reduce((a, b) => a + b, 0);
+          const preview = `пн:${perDay[0]} вт:${perDay[1]} ср:${perDay[2]} чт:${perDay[3]} пт:${perDay[4]}`;
+          const source = usedAI ? 'AI' : 'локальный парсер';
+          if (!confirm(`распознано ${total} уроков (${preview}).\nисточник: ${source}.\nприменить?`)) return;
+
+          // 7. Применяем
           const backup = JSON.parse(JSON.stringify(state));
           state.schedule = { 1: [], 2: [], 3: [], 4: [], 5: [] };
-          for (const day of Object.keys(imported)) {
-            const dayKey = String(day);
-            state.schedule[dayKey] = parseLessons(imported[dayKey].join(',')).list;
+          for (let d = 1; d <= 5; d++) {
+            const seen = new Set();
+            state.schedule[d] = (importedSchedule[d] || [])
+              .map(s => String(s).trim())
+              .filter(s => {
+                const k = s.toLowerCase();
+                if (!s || seen.has(k)) return false;
+                seen.add(k);
+                return true;
+              });
           }
           save();
           renderSchedule();
@@ -5612,10 +5815,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           fillSettings();
           loadSchedDay();
           fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-          showToast('расписание импортировано');
+          showToast(`${usedAI ? 'AI ' : ''}импортировал ${total} уроков`);
           importBackup = backup;
           setDisplay('btnUndoImport', true);
+
         } catch (err) {
+          console.error('import schedule error:', err);
           showToast('не удалось обработать excel-файл', '!');
         }
       };
@@ -5820,6 +6025,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('tasksList').addEventListener('change', e => {
         const input = e.target.closest('input[data-act="toggle-subtask"]');
         if (input) toggleTaskSubtask(input);
+      });
+
+      let pressTimer = null;
+      let pressTaskId = null;
+
+      $('tasksList').addEventListener('touchstart', e => {
+        const card = e.target.closest('.task-card');
+        if (!card || e.target.closest('button, input, label')) return;
+        pressTaskId = card.querySelector('[data-act="done"]')?.dataset.id;
+        if (!pressTaskId) return;
+        pressTimer = setTimeout(() => {
+          if (navigator.vibrate) navigator.vibrate(30);
+          completeTaskById(pressTaskId);
+          pressTimer = null;
+        }, 600);
+      }, { passive: true });
+
+      ['touchend', 'touchmove', 'touchcancel'].forEach(evt => {
+        $('tasksList').addEventListener(evt, () => {
+          if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        }, { passive: true });
       });
 
       $('setSchoolStart').addEventListener('change', e => {
@@ -6114,6 +6340,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         document.querySelector(`#periodChips .chip[data-p="${state.period}"]`));
       loadSchedDay();
 
+      checkAutoArchive();
       renderAll();
 
       const start = state.start;
@@ -6127,14 +6354,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const startMin = sH * 60 + sM;
         const endMin = eH * 60 + eM;
 
-         resolvedStart = curMin < startMin ? 'overview' :
+        resolvedStart = curMin < startMin ? 'overview' :
                          curMin < endMin ? (state.schedSaved ? 'overview' : 'schedule') :
                          'tasks';
-       }
-       if (resolvedStart === 'schedule' && state.schedSaved) resolvedStart = 'overview';
-       tab(resolvedStart, navBtn(resolvedStart));
-
-      checkAutoArchive();
+      }
+      if (resolvedStart === 'schedule' && state.schedSaved) resolvedStart = 'overview';
+      tab(resolvedStart, navBtn(resolvedStart));
 
       const overdueCount = state.tasks.filter(isOverdue).length;
       if (overdueCount > 0) {
@@ -6180,6 +6405,37 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     document.addEventListener('DOMContentLoaded', init);
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let touchStartX = 0, touchStartY = 0, swiping = false;
+      const ORDER = ['overview', 'schedule', 'add', 'tasks', 'archive'];
+      const main = document.querySelector('main');
+
+      main.addEventListener('touchstart', e => {
+        if (e.target.closest('input, textarea, select, .chips, .timer-view, .modal-overlay')) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        swiping = true;
+      }, { passive: true });
+
+      main.addEventListener('touchend', e => {
+        if (!swiping) return;
+        swiping = false;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) < 70 || Math.abs(dy) > 60) return;
+        const curEl = document.querySelector('.view-section.active');
+        if (!curEl) return;
+        const visibleOrder = ORDER.filter(t => document.querySelector(`.nav-btn[data-tab="${t}"]`)?.style.display !== 'none');
+        const cur = curEl.id.replace('view-', '');
+        const idx = visibleOrder.indexOf(cur);
+        if (idx === -1) return;
+        const next = dx < 0 ? visibleOrder[idx + 1] : visibleOrder[idx - 1];
+        if (next) {
+          tab(next, navBtn(next));
+        }
+      }, { passive: true });
+    });
   </script>
 
   <!-- ОКНО ПРИВЕТСТВИЯ -->
@@ -6258,8 +6514,40 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+
+          // если уже есть ждущий SW — сразу говорим ему активироваться
+          if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+
+          // новый SW готов встать в очередь
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          });
+        } catch (err) {
+          console.warn('[SW] registration failed:', err);
+        }
+      });
+
+      // SW обновился и взял контроль — предлагаем перезагрузку (только если контроллер уже был)
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      let swReloaded = false;
+      navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          if (!hadController || swReloaded) return;
+          swReloaded = true;
+          if (typeof showToast === 'function') {
+            showToast('доступно обновление studyflow — перезагрузите страницу', '✨', 7000);
+          }
+        }
       });
     }
   </script>
