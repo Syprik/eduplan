@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="studyflow">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>studyflow — цифровой школьный планировщик</title>
   <meta name="description" content="studyflow — умный планировщик для учёбы: расписание уроков, домашние задания, таймер фокуса и умная разминка. Работает без регистрации.">
   <meta name="theme-color" content="#090b14">
@@ -1391,6 +1391,15 @@
       font-weight: 700;
       margin-left: 6px;
     }
+
+    html, body {
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+    input, textarea, select {
+      touch-action: manipulation;
+      -webkit-user-select: auto;
+    }
   </style>
 </head>
 <body>
@@ -1954,6 +1963,36 @@
     </div>
   </div>
 
+  <!-- СИНХРОНИЗАЦИЯ: КОНФЛИКТ ДАННЫХ -->
+  <div class="modal-overlay" id="syncConflictModal">
+    <div class="glass modal-box" role="dialog" aria-modal="true" aria-labelledby="syncConflictTitle" style="max-width: 480px;">
+      <div class="modal-header">
+        <span id="syncConflictTitle" style="font-weight: 800; font-size: 15px;">конфликт данных</span>
+      </div>
+      <div class="modal-body" style="padding: 22px; text-align: left;">
+        <p style="font-size: 13px; line-height: 1.5; margin-bottom: 14px;">
+          мы нашли задачи и в <b style="color: var(--accent);">облаке</b>, и на <b style="color: var(--success);">этом устройстве</b>.
+          <br>что сделать?
+        </p>
+        <div style="background: var(--card-sub); padding: 10px 12px; border-radius: 10px; font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 16px;">
+          <div><b style="color: var(--accent);">облако:</b> <span id="syncCloudStats">…</span></div>
+          <div><b style="color: var(--success);">устройство:</b> <span id="syncLocalStats">…</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <button class="btn-main" onclick="resolveSyncConflict('cloud')" style="background: var(--grad);">
+            использовать данные облака
+          </button>
+          <button class="btn-main" onclick="resolveSyncConflict('local')" style="background: var(--success);">
+            оставить данные устройства
+          </button>
+          <button class="btn-act" onclick="resolveSyncConflict('cancel')" style="width: 100%;">
+            отмена (ничего не менять)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ---------- Supabase ----------
     const SUPABASE_URL = 'https://lhdqptvqpvecoouxjnpw.supabase.co';
@@ -2023,6 +2062,11 @@
 
     async function handleSignOut() {
       if (!sbClient) return;
+      // Забываем решение о синхронизации — при следующем входе спросим снова
+      try {
+        const { data: { user } } = await sbClient.auth.getUser();
+        if (user && user.id) removeRaw('ep_sync_decision_' + user.id);
+      } catch (e) {}
       await sbClient.auth.signOut();
       _cloudSyncToastShown = false;
       showToast('вы вышли из аккаунта');
@@ -2068,6 +2112,44 @@
 
     // 2. Загрузка данных из облака
     let _cloudSyncToastShown = false;
+
+    function applyCloudPayload(c) {
+      if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
+      if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
+      if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
+      if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
+      if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
+      if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
+      if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
+      if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
+      if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen === 'true';
+      if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
+      if (c.ep_ai_disabled !== undefined) state.aiDisabled = c.ep_ai_disabled === 'true';
+      if (c.ep_sched_saved !== undefined) state.schedSaved = c.ep_sched_saved === 'true';
+      if (c.ep_school_start) state.schoolStart = c.ep_school_start;
+      if (c.ep_school_end) state.schoolEnd = c.ep_school_end;
+
+      try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
+      try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
+      try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
+      try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
+      state.doneTotal = Math.max(state.doneTotal, state.archive.length);
+
+      for (const k of Object.keys(c)) {
+        writeRaw(k, c[k]);
+      }
+
+      updateDaysConfig();
+      updateAIFeatureVisibility();
+      updateAddTabVisibility();
+      applyAppearance();
+      checkAutoArchive();
+      renderAll();
+      loadSchedDay();
+      fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
+      checkAIAvailability();
+    }
+
     async function loadFromCloud(userId, showNotify = true) {
       if (!sbClient || !userId) {
         setSyncStatus('offline');
@@ -2087,58 +2169,125 @@
           return;
         }
 
-         if (data && data.payload) {
-           clearTimeout(cloudSyncTimer);
-           cloudSyncGeneration += 1;
-           const c = data.payload;
+        const cloudPayload = data && data.payload ? data.payload : null;
+        const localPayload = buildLocalPayload();
 
-           if (VALID_THEMES.includes(c.ep_theme)) state.theme = c.ep_theme;
-           if (c.ep_liquid !== undefined) state.liquid = c.ep_liquid === 'true';
-           if (VALID_TABS.includes(c.ep_start)) state.start = c.ep_start;
-           if (VALID_PERIODS.includes(c.ep_period)) state.period = c.ep_period;
-           if (c.ep_work) state.work = clamp(toInt(c.ep_work, 25), 1, 180);
-           if (c.ep_rest) state.rest = clamp(toInt(c.ep_rest, 5), 1, 60);
-           if (c.ep_done !== undefined) state.doneTotal = Math.max(0, toInt(c.ep_done, 0));
-           if (c.ep_notif !== undefined) state.notif = c.ep_notif === 'true';
-           if (c.ep_welcomescreen !== undefined) state.welcomeShown = c.ep_welcomescreen === 'true';
-           if (c.ep_autoarchive !== undefined) state.autoArchive = c.ep_autoarchive !== 'false';
-           if (c.ep_ai_disabled !== undefined) state.aiDisabled = c.ep_ai_disabled === 'true';
-           if (c.ep_sched_saved !== undefined) state.schedSaved = c.ep_sched_saved === 'true';
-           if (c.ep_school_start) state.schoolStart = c.ep_school_start;
-           if (c.ep_school_end) state.schoolEnd = c.ep_school_end;
+        const cloudStats = countDataStats(cloudPayload);
+        const localStats = countDataStats(localPayload);
 
-           try { if (c.ep_focus) state.focus = normalizeFocus(JSON.parse(c.ep_focus)); } catch (e) {}
-           try { if (c.ep_sched) state.schedule = normalizeSchedule(JSON.parse(c.ep_sched)); } catch (e) {}
-           try { if (c.ep_tasks) state.tasks = normalizeTaskList(JSON.parse(c.ep_tasks)); } catch (e) {}
-            try { if (c.ep_archive) state.archive = normalizeTaskList(JSON.parse(c.ep_archive)); } catch (e) {}
-            state.doneTotal = Math.max(state.doneTotal, state.archive.length);
+        // 1. Облако пустое → просто пушим локальные
+        if (!cloudPayload || !hasData(cloudStats)) {
+          save(true);
+          setSyncStatus('saved');
+          return;
+        }
 
-            // Фиксируем скачанное в локальном localStorage
-           for (const k of Object.keys(c)) {
-             writeRaw(k, c[k]);
-           }
+        // 2. Локально пусто → просто принимаем облако
+        if (!hasData(localStats)) {
+          applyCloudPayload(cloudPayload);
+          if (showNotify && !_cloudSyncToastShown) {
+            _cloudSyncToastShown = true;
+            showToast('данные загружены из облака', '☁️');
+          }
+          setSyncStatus('saved');
+          return;
+        }
 
-           // Полный цикл обновления визуала
-           updateDaysConfig();
-           updateAIFeatureVisibility();
-           updateAddTabVisibility();
-           applyAppearance();
-           checkAutoArchive();
-            renderAll();
-            loadSchedDay();
-            fillSubjects($('addSubj'), $('addSubjOther'), $('addDay').value, $('addSubj').value);
-            checkAIAvailability();
-            if (showNotify && !_cloudSyncToastShown) {
-             _cloudSyncToastShown = true;
-             showToast('данные синхронизированы с облаком');
-           }
-           setSyncStatus('saved');
-         } else {
-           save(true);
-         }
+        // 3. Оба источника с данными → возможно конфликт
+        // Если пользователь уже делал выбор ранее — уважаем его
+        let savedDecision = '';
+        try { savedDecision = readRaw('ep_sync_decision_' + userId) || ''; } catch (e) {}
+
+        if (savedDecision === 'local') {
+          save(true);
+          setSyncStatus('saved');
+          return;
+        }
+        if (savedDecision === 'cloud') {
+          applyCloudPayload(cloudPayload);
+          setSyncStatus('saved');
+          return;
+        }
+
+        // 4. Первый вход — спросить
+        showSyncConflict(cloudPayload, localPayload, userId);
+        setSyncStatus('offline'); // временно, пока не выбрано
       } catch (err) {
         console.error('критическая ошибка разбора данных облака:', err);
         setSyncStatus('error');
+      }
+    }
+
+    // ---------- Синхронизация: разрешение конфликта ----------
+    let _pendingConflict = null;
+
+    function countDataStats(payload) {
+      if (!payload) return { tasks: 0, archive: 0, schedule: 0 };
+      let tasks = 0, archive = 0, schedule = 0;
+      try { tasks = JSON.parse(payload.ep_tasks || '[]').length || 0; } catch {}
+      try { archive = JSON.parse(payload.ep_archive || '[]').length || 0; } catch {}
+      try {
+        const s = JSON.parse(payload.ep_sched || '{}');
+        for (const k of Object.keys(s)) if (Array.isArray(s[k])) schedule += s[k].length;
+      } catch {}
+      return { tasks, archive, schedule };
+    }
+
+    function hasData(stats) {
+      return stats.tasks > 0 || stats.archive > 0 || stats.schedule > 0;
+    }
+
+    function buildLocalPayload() {
+      // читаем прямо из localStorage — это и есть «данные устройства»
+      const payload = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('ep_') && !k.startsWith('ep_corrupt_')) {
+          payload[k] = localStorage.getItem(k);
+        }
+      }
+      return payload;
+    }
+
+    // Показать модалку выбора
+    function showSyncConflict(cloudPayload, localPayload, userId) {
+      _pendingConflict = { cloudPayload, localPayload, userId };
+      const cloudStats = countDataStats(cloudPayload);
+      const localStats = countDataStats(localPayload);
+      const fmt = (s) => `${s.tasks} задач · ${s.archive} в архиве · ${s.schedule} уроков`;
+      $('syncCloudStats').textContent = fmt(cloudStats);
+      $('syncLocalStats').textContent = fmt(localStats);
+      showModal($('syncConflictModal'), null);
+    }
+
+    // Пользователь сделал выбор
+    async function resolveSyncConflict(choice) {
+      const ctx = _pendingConflict;
+      _pendingConflict = null;
+      hideModal($('syncConflictModal'));
+
+      if (!ctx || choice === 'cancel') {
+        // Отмена — выходим из аккаунта, чтобы не запушилось в облако локально
+        if (sbClient) await sbClient.auth.signOut();
+        showToast('синхронизация отменена — вы вышли из аккаунта', 'i');
+        return;
+      }
+
+      // Запоминаем решение для этого пользователя, чтобы больше не спрашивать
+      try {
+        const decisionKey = 'ep_sync_decision_' + ctx.userId;
+        writeRaw(decisionKey, choice);
+      } catch (e) {}
+
+      if (choice === 'cloud') {
+        // Локальное → облачное
+        applyCloudPayload(ctx.cloudPayload);
+        showToast('загружены данные облака', '☁️');
+      } else if (choice === 'local') {
+        // Облачное → локальное (перезапись облака)
+        // State уже содержит локальные данные на момент вызова loadFromCloud
+        save(true);
+        showToast('локальные данные загружены в облако', '☁️');
       }
     }
 
@@ -2653,6 +2802,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       if (e.key === 'Escape') {
         e.preventDefault();
         if (activeModal.id === 'timerPhaseModal') return;
+        if (activeModal.id === 'syncConflictModal') { resolveSyncConflict('cancel'); return; }
         hideModal(activeModal);
         return;
       }
@@ -3722,7 +3872,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     async function importBatchAiTasks(e) {
       e.preventDefault();
       if (!isAiAvailable()) {
-        showToast('AI временно недоступен, введите вручную', 'i');
+        showAiRateLimitWarning();
         return;
       }
       if (state.aiDisabled || aiUnreachable || batchAiPending) return;
@@ -3735,6 +3885,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       submit.disabled = true;
       submit.innerHTML = '<span class="ai-inline-spinner" aria-hidden="true"></span>разбираем текст';
       try {
+        recordAiRequest();
         const result = await sbClient.functions.invoke('ai-coach', {
           body: { action: 'parse_raw', rawText: rawText, today: getLocalToday() }
         });
@@ -3855,11 +4006,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     const decomposingTaskIds = new Set();
     async function decomposeTask(id, button) {
       const task = state.tasks.find(item => item.id === id);
+      const totalMinutes = COMP[task.comp]?.t || 25;
       if (!isAiAvailable()) {
+        showAiRateLimitWarning();
+        const partMin = Math.max(5, Math.round(totalMinutes / 3));
         const fallbackSubtasks = [
-          { text: "Разобрать условия и составить план", done: false },
-          { text: "Выполнить основную часть работы", done: false },
-          { text: "Проверить ошибки и оформить", done: false }
+          { text: `Разобрать условия и составить план (~${partMin} мин)`, done: false },
+          { text: `Выполнить основную часть (~${partMin} мин)`, done: false },
+          { text: `Проверить ошибки и оформить (~${totalMinutes - partMin * 2} мин)`, done: false }
         ];
         const currentTask = state.tasks.find(item => item.id === id);
         if (currentTask) {
@@ -3883,8 +4037,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         button.innerHTML = '<span class="ai-inline-spinner" aria-hidden="true"></span>шаги';
       }
       try {
+        recordAiRequest();
         const result = await sbClient.functions.invoke('ai-coach', {
-          body: { action: 'decompose', subject: task.subj, task: task.text }
+          body: { action: 'decompose', subject: task.subj, task: task.text, targetMinutes: totalMinutes }
         });
         if (state.aiDisabled) return;
         if (result.error) throw result.error;
@@ -3904,10 +4059,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       } catch (error) {
         console.error('ошибка AI-разбивки задания:', error);
         triggerAiCooldown(15);
+        const partMin = Math.max(5, Math.round(totalMinutes / 3));
         const fallbackSubtasks = [
-          { text: "Разобрать условия и составить план", done: false },
-          { text: "Выполнить основную часть работы", done: false },
-          { text: "Проверить ошибки и оформить", done: false }
+          { text: `Разобрать условия и составить план (~${partMin} мин)`, done: false },
+          { text: `Выполнить основную часть (~${partMin} мин)`, done: false },
+          { text: `Проверить ошибки и оформить (~${totalMinutes - partMin * 2} мин)`, done: false }
         ];
         const currentTask = state.tasks.find(item => item.id === id);
         if (currentTask) {
@@ -4250,17 +4406,51 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let timerDigitsHidden = false;
 
     // ---------- Circuit Breaker для AI ----------
+    // Лимит: 5 AI-запросов за 60 секунд
+    const AI_RATE_LIMIT = 5;
+    const AI_RATE_WINDOW = 60 * 1000; // 1 минута
+    let aiRequestTimestamps = [];
+
+    function recordAiRequest() {
+      const now = Date.now();
+      aiRequestTimestamps = aiRequestTimestamps.filter(t => now - t < AI_RATE_WINDOW);
+      aiRequestTimestamps.push(now);
+    }
+
+    function getAiRemainingRequests() {
+      const now = Date.now();
+      aiRequestTimestamps = aiRequestTimestamps.filter(t => now - t < AI_RATE_WINDOW);
+      return Math.max(0, AI_RATE_LIMIT - aiRequestTimestamps.length);
+    }
+
+    function getAiResetInMs() {
+      if (aiRequestTimestamps.length === 0) return 0;
+      const oldest = aiRequestTimestamps[0];
+      return Math.max(0, (oldest + AI_RATE_WINDOW) - Date.now());
+    }
+
     function isAiAvailable() {
       return !state.aiDisabled
         && navigator.onLine
         && Boolean(sbClient)
-        && Date.now() > state.aiCooldownUntil;
+        && Date.now() > state.aiCooldownUntil
+        && getAiRemainingRequests() > 0;
     }
 
     function triggerAiCooldown(minutes = 15) {
       state.aiCooldownUntil = Date.now() + minutes * 60 * 1000;
       updateAIFeatureVisibility();
       renderTasks();
+    }
+
+    function showAiRateLimitWarning() {
+      const remaining = getAiRemainingRequests();
+      const resetMs = getAiResetInMs();
+      const resetSec = Math.ceil(resetMs / 1000);
+      const msg = remaining === 0
+        ? `лимит AI исчерпан — через ${resetSec} сек`
+        : `⚡ AI: осталось ${remaining} из 5 за мин`;
+      showToast(msg, '⏱', remaining === 0 ? 8000 : 3000);
     }
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
@@ -4963,6 +5153,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           .filter(a => a.closedAt === today && a.closedReason === 'completed')
           .slice(0, 5)
           .map(a => `${a.subj}: ${a.text}`);
+        recordAiRequest();
         const res = await Promise.race([
           sbClient.functions.invoke('ai-coach', {
             body: {
@@ -5129,7 +5320,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     async function requestAIDayReview() {
       if (!isAiAvailable()) {
-        showToast('AI временно недоступен', 'i');
+        showAiRateLimitWarning();
         return;
       }
       if (state.aiDisabled || aiUnreachable) return;
@@ -5144,14 +5335,17 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const indicator = $('dayReviewIndicator');
       if (indicator) indicator.style.display = 'none';
       $('aiDayReviewText').innerHTML = '<span class="ai-inline-spinner"></span>анализирую день…';
-      try {
-        const todayFocusMin = Math.round((state.focus[getLocalToday()] || 0) / 60000);
-        const result = await sbClient.functions.invoke('ai-coach', {
+       try {
+         recordAiRequest();
+         const todayFocusMin = Math.round((state.focus[getLocalToday()] || 0) / 60000);
+         const result = await sbClient.functions.invoke('ai-coach', {
           body: {
             action: 'review_day',
             completedCount: (state.archive || []).filter(a => a.closedAt === getLocalToday() && a.closedReason === 'completed').length,
+            totalCompleted: state.doneTotal,
             focusTime: `${todayFocusMin} мин`,
-            overdueCount: state.tasks.filter(isOverdue).length
+            overdueCount: state.tasks.filter(isOverdue).length,
+            openCount: state.tasks.length
           }
         });
         if (state.aiDisabled || aiUnreachable) return;
@@ -5174,23 +5368,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
     }
 
-    async function checkAIAvailability() {
-      if (!sbClient || !navigator.onLine) {
-        aiUnreachable = true;
-        updateAIFeatureVisibility();
-        renderTasks();
-        return;
-      }
-      try {
-        const result = await sbClient.functions.invoke('ai-coach', {
-          body: { action: 'health' }
-        });
-        if (result.error) throw result.error;
-        aiUnreachable = false;
-      } catch (err) {
-        console.warn('AI недоступен:', err.message);
-        aiUnreachable = true;
-      }
+    function checkAIAvailability() {
+      // 0 запросов к серверу — только проверка сети и клиента.
+      // Реальная недоступность (429, timeout) ловится при первом клике
+      // через triggerAiCooldown(15) в catch-блоках.
+      aiUnreachable = !navigator.onLine || !sbClient;
       updateAIFeatureVisibility();
       renderTasks();
     }
@@ -5749,6 +5931,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             showToast('AI разбирает расписание... ✨');
             let timeoutId;
             try {
+              recordAiRequest();
               const aiCall = sbClient.functions.invoke('ai-coach', {
                 body: { action: 'parse_schedule', csvText: csvText.slice(0, 10000) }
               });
@@ -5914,20 +6097,27 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     async function resetAll() {
       if (!confirm('сбросить все данные? задания, расписание и архив будут удалены (включая копию в облаке)')) return;
       resetting = true;
-      try {
-        clearTimeout(cloudSyncTimer);
-        cloudSyncTimer = null;
-        cloudSyncGeneration += 1;
-        await cloudSyncPromise;
-        if (sbClient) {
+      
+      // 1. Пытаемся удалить из облака (если залогинены)
+      if (sbClient) {
+        try {
+          clearTimeout(cloudSyncTimer);
+          cloudSyncTimer = null;
+          cloudSyncGeneration += 1;
+          await cloudSyncPromise;
+          
           const { data, error: authError } = await sbClient.auth.getUser();
-          if (authError) throw authError;
-          const user = data?.user;
-          if (user) {
-            const { error } = await sbClient.from('user_data').delete().eq('user_id', user.id);
-            if (error) throw error;
+          if (!authError && data?.user) {
+            await sbClient.from('user_data').delete().eq('user_id', data.user.id);
           }
+        } catch (err) {
+          console.warn('Не удалось удалить данные из облака (возможно, нет сессии):', err);
+          // Не прерываем выполнение, идем дальше чистить локальное
         }
+      }
+
+      // 2. Очищаем локальное хранилище
+      try {
         const keys = [];
         for (let i = 0; i < localStorage.length; i++) {
           const k = localStorage.key(i);
@@ -5936,11 +6126,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         keys.forEach(key => localStorage.removeItem(key));
       } catch (err) {
         resetting = false;
-        console.error('ошибка сброса данных:', err);
-        setSyncStatus('error');
-        showToast('не удалось полностью сбросить данные: ' + (err?.message || 'ошибка хранилища'), '!');
+        console.error('ошибка сброса локальных данных:', err);
+        showToast('не удалось сбросить локальные данные', '!');
         return;
       }
+      
+      // 3. Перезагружаем приложение
       importBackup = null;
       setDisplay('btnUndoImport', false);
       location.reload();
@@ -6264,6 +6455,36 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         getTarget: () => document.querySelector('.dock-settings-btn'),
         title: '🎨 Твой стиль и облако',
         text: 'Здесь живут темы Liquid Glass, вход в аккаунт и переключатели режимов.'
+      },
+      {
+        tab: 'tasks',
+        getTarget: () => document.querySelector('[data-act="decompose"]') || $('tasksList'),
+        title: '🧩 AI-разбивка на шаги',
+        text: 'Нажми «шаги» на задаче — AI разобьёт её на подзадачи с таймингами. Работает даже офлайн.'
+      },
+      {
+        tab: 'overview',
+        getTarget: () => document.querySelector('#btnRefreshDayReview') || $('toast'),
+        title: '📋 AI-обзор дня',
+        text: 'Кнопка ↻ рядом с «Итого за день» — AI проанализирует прогресс и даст рекомендацию.'
+      },
+      {
+        tab: 'add',
+        getTarget: () => $('batchAiChip') || $('addText'),
+        title: '📝 AI из чата',
+        text: 'Кнопка «✨ вставить текст из чата» — вставь скриншот или текст из мессенджера, AI найдёт задания.'
+      },
+      {
+        tab: 'tasks',
+        getTarget: () => document.querySelector('[data-act="focus"]') || $('tasksList'),
+        title: '🧘 AI-разминка',
+        text: 'После фокуса AI подберёт упражнения под конкретную задачу: глаза, шея, спина, кисти.'
+      },
+      {
+        tab: 'overview',
+        getTarget: () => $('toast'),
+        title: '⏱ Лимит AI-запросов',
+        text: '5 AI-запросов в минуту — чтобы сервер не тормозил. Когда лимит исчерпан, таймер покажет обратный отсчёт. Попробуй прямо сейчас: нажми «шаги» на любой задаче.'
       }
     ];
 
@@ -6317,7 +6538,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       bindEvents();
       initMiniDrag();
       checkAIAvailability();
-
+            window.addEventListener('online', () => {
+        checkAIAvailability();
+        showToast('подключение к сети восстановлено', '🌐');
+      });
+      window.addEventListener('offline', () => {
+        checkAIAvailability();
+        showToast('нет подключения, включен локальный режим', 'i');
+      });
       // Две вкладки держали свой state и затирали работу друг друга при save().
       // Синхронизируемся: перечитываем данные и перерисовываем экраны.
        window.addEventListener('storage', e => {
@@ -6550,6 +6778,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         }
       });
     }
+
+    // Запрет двойного тапа для зума на iOS
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
   </script>
 </body>
 </html>
