@@ -2639,11 +2639,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function restoreBrand() {
       pendingUndo = null;
       $('toast').classList.remove('undoable');
-      animateBrandState(false);
       if (tState.minimized) {
         showIsland();
         updateIslandUI();
       }
+      animateBrandState(false);
     }
 
     // ---------- Системные уведомления ----------
@@ -3926,7 +3926,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast('добавлено задач: ' + tasks.length);
       } catch (error) {
         console.error('ошибка разбора текста с заданиями:', error);
-        triggerAiCooldown(15);
+        triggerAiCooldown(1);
         showToast(error && error.message || 'не удалось разобрать текст', '!');
       } finally {
         batchAiPending = false;
@@ -4003,31 +4003,33 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       renderTasks();
     }
 
+    function buildLocalSubtasks(totalMinutes) {
+      const firstMin = Math.max(1, Math.round(totalMinutes * 0.3));
+      const secondMin = Math.max(1, Math.round(totalMinutes * 0.45));
+      const thirdMin = Math.max(1, totalMinutes - firstMin - secondMin);
+      return [
+        { text: `Разобрать условия и составить план (~${firstMin} мин)`, done: false },
+        { text: `Выполнить основную часть (~${secondMin} мин)`, done: false },
+        { text: `Проверить ошибки и оформить (~${thirdMin} мин)`, done: false }
+      ];
+    }
+
     const decomposingTaskIds = new Set();
     async function decomposeTask(id, button) {
       const task = state.tasks.find(item => item.id === id);
-      const totalMinutes = COMP[task.comp]?.t || 25;
-      if (!isAiAvailable()) {
-        showAiRateLimitWarning();
-        const partMin = Math.max(5, Math.round(totalMinutes / 3));
-        const fallbackSubtasks = [
-          { text: `Разобрать условия и составить план (~${partMin} мин)`, done: false },
-          { text: `Выполнить основную часть (~${partMin} мин)`, done: false },
-          { text: `Проверить ошибки и оформить (~${totalMinutes - partMin * 2} мин)`, done: false }
-        ];
-        const currentTask = state.tasks.find(item => item.id === id);
-        if (currentTask) {
-          currentTask.subtasks = fallbackSubtasks;
-          currentTask.subtasksSource = 'local';
-          save();
-          renderTasks();
-          showToast('шаги задания готовы');
-        }
-        return;
-      }
       if (state.aiDisabled || aiUnreachable || !task || decomposingTaskIds.has(id)) return;
       if (!sbClient || !navigator.onLine) {
         showToast('AI-разбивка недоступна офлайн', '!');
+        return;
+      }
+      const totalMinutes = COMP[task.comp]?.t || 25;
+      if (!isAiAvailable()) {
+        const fallbackSubtasks = buildLocalSubtasks(totalMinutes);
+        task.subtasks = fallbackSubtasks;
+        task.subtasksSource = 'local';
+        save();
+        renderTasks();
+        showAiRateLimitWarning();
         return;
       }
       decomposingTaskIds.add(id);
@@ -4058,20 +4060,14 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast('шаги задания готовы');
       } catch (error) {
         console.error('ошибка AI-разбивки задания:', error);
-        triggerAiCooldown(15);
-        const partMin = Math.max(5, Math.round(totalMinutes / 3));
-        const fallbackSubtasks = [
-          { text: `Разобрать условия и составить план (~${partMin} мин)`, done: false },
-          { text: `Выполнить основную часть (~${partMin} мин)`, done: false },
-          { text: `Проверить ошибки и оформить (~${totalMinutes - partMin * 2} мин)`, done: false }
-        ];
+        triggerAiCooldown(1);
         const currentTask = state.tasks.find(item => item.id === id);
         if (currentTask) {
-          currentTask.subtasks = fallbackSubtasks;
+          currentTask.subtasks = buildLocalSubtasks(totalMinutes);
           currentTask.subtasksSource = 'local';
           save();
           renderTasks();
-          showToast('шаги задания готовы');
+          showToast('шаги задания готовы (локальный план)');
         }
       } finally {
         decomposingTaskIds.delete(id);
@@ -4348,7 +4344,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const fixed = normalizeTask({
         id: state.tasks[idx].id, day, subj, text, due: validDue, prio, comp,
         repeat: $('editRepeat').checked ? 'weekly' : null,
-        subtasks: state.tasks[idx].subtasks
+        subtasks: state.tasks[idx].subtasks,
+        subtasksSource: state.tasks[idx].subtasksSource
       });
       if (!fixed) { showToast('не удалось сохранить изменения', '!'); return; }
       state.tasks[idx] = fixed;
@@ -4444,13 +4441,26 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     function showAiRateLimitWarning() {
+      if (state.aiDisabled) {
+        showToast('AI-функции отключены в настройках', 'i');
+        return;
+      }
+      if (!navigator.onLine || !sbClient) {
+        showToast('AI недоступен офлайн', '!');
+        return;
+      }
       const remaining = getAiRemainingRequests();
-      const resetMs = getAiResetInMs();
-      const resetSec = Math.ceil(resetMs / 1000);
-      const msg = remaining === 0
-        ? `лимит AI исчерпан — через ${resetSec} сек`
-        : `⚡ AI: осталось ${remaining} из 5 за мин`;
-      showToast(msg, '⏱', remaining === 0 ? 8000 : 3000);
+      if (remaining === 0) {
+        const resetSec = Math.max(1, Math.ceil(getAiResetInMs() / 1000));
+        showToast(`лимит AI (5/мин) исчерпан — подождите ${resetSec} сек`, '⏱', 6000);
+        return;
+      }
+      if (Date.now() <= state.aiCooldownUntil) {
+        const leftMin = Math.max(1, Math.ceil((state.aiCooldownUntil - Date.now()) / 60000));
+        showToast(`AI временно на паузе после ошибки сети (~${leftMin} мин)`, '⏱', 5000);
+        return;
+      }
+      showToast(`⚡ AI: осталось ${remaining} из 5 за мин`, '⏱', 3000);
     }
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
@@ -5144,8 +5154,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     }
 
     async function fetchAIBreakPlan() {
-      if (!isAiAvailable()) throw new Error('AI недоступен');
       if (state.aiDisabled || aiUnreachable) throw new Error('AI-функции отключены');
+      if (!isAiAvailable()) {
+        const rateErr = new Error('AI лимит исчерпан');
+        rateErr.isRateLimit = true;
+        throw rateErr;
+      }
       let timeoutId;
       try {
         const today = getLocalToday();
@@ -5167,7 +5181,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             }
           }),
           new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('AI-план не получен за 7 секунд')), 7000);
+            timeoutId = setTimeout(() => reject(new Error('AI-план не получен за 10 секунд')), 10000);
           })
         ]);
         if (!res) throw new Error('пустой ответ от ai-coach');
@@ -5182,7 +5196,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
             : 'Персональный план'
         };
       } catch (err) {
-        triggerAiCooldown(15);
+        if (!err || !err.isRateLimit) triggerAiCooldown(1);
         throw err;
       } finally {
         clearTimeout(timeoutId);
@@ -5257,6 +5271,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     async function requestAICoachTip() {
       const refreshBtn = $('btnRefreshAI');
       if (state.aiDisabled || aiUnreachable || !refreshBtn || refreshBtn.disabled || breakRoutineLoading || tState.phase !== 'break') return;
+      if (!isAiAvailable()) {
+        showAiRateLimitWarning();
+        return;
+      }
       refreshBtn.disabled = true;
       refreshBtn.classList.add('refresh-spin');
       const requestId = ++breakRoutineRequestId;
@@ -5359,7 +5377,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         }
       } catch (err) {
         console.error('ошибка AI-сводки дня:', err);
-        triggerAiCooldown(15);
+        triggerAiCooldown(1);
         $('aiDayReviewText').textContent = 'Не удалось получить сводку. Попробуйте ещё раз.';
         showToast('Не удалось получить AI-сводку', '!');
       } finally {
@@ -5371,7 +5389,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function checkAIAvailability() {
       // 0 запросов к серверу — только проверка сети и клиента.
       // Реальная недоступность (429, timeout) ловится при первом клике
-      // через triggerAiCooldown(15) в catch-блоках.
+       // через triggerAiCooldown(1) в catch-блоках.
       aiUnreachable = !navigator.onLine || !sbClient;
       updateAIFeatureVisibility();
       renderTasks();
@@ -5922,10 +5940,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           let usedAI = false;
 
           // 3. Пробуем AI с таймаутом (не блокируемся навечно)
-          const aiAvailable = !state.aiDisabled
-            && navigator.onLine
-            && Boolean(sbClient)
-            && Date.now() > (state.aiCooldownUntil || 0);
+          const aiAvailable = isAiAvailable();
 
           if (aiAvailable) {
             showToast('AI разбирает расписание... ✨');
@@ -6501,7 +6516,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       clearTimeout(tourStepTimer);
       tourStepTimer = setTimeout(() => {
         const el = step.getTarget();
-        if (!el) {
+        if (!el || el.getClientRects().length === 0) {
           runTourStep(index + 1);
           return;
         }
