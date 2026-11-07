@@ -744,6 +744,8 @@
     }
     .ai-day-review-content { flex: 1; min-width: 0; font-size: 13px; line-height: 1.45; }
     body.ai-disabled #batchAiChip,
+    body.ai-disabled #aiPrioChip,
+    body.ai-disabled #aiSchedChip,
     body.ai-disabled #btnRefreshAI,
     body.ai-disabled #btnRefreshDayReview,
     body.ai-disabled #aiDayReviewBanner,
@@ -752,6 +754,8 @@
       display: none !important;
     }
     body.ai-unavailable #batchAiChip,
+    body.ai-unavailable #aiPrioChip,
+    body.ai-unavailable #aiSchedChip,
     body.ai-unavailable #btnRefreshAI,
     body.ai-unavailable #btnRefreshDayReview,
     body.ai-unavailable #aiDayReviewBanner,
@@ -1614,9 +1618,11 @@
         </div>
       </div>
       <div class="chips" id="filterChips">
-        <button class="chip chip-action" onclick="autoPrioritize()" title="расставить приоритеты по срочности и сложности">⚡ по срочности</button>
-        <button class="chip active" data-f="all" onclick="setFilter('all', this)" aria-pressed="true">все задачи</button>
-        <button class="chip" data-f="smart" onclick="setFilter('smart', this)" aria-pressed="false">умная</button>
+        <button class="chip chip-action" id="aiPrioChip" onclick="aiPrioritizeTasks()" title="AI-оценка срочности и важности">✨ AI-приоритет</button>
+        <button class="chip chip-action" id="aiSchedChip" onclick="aiAutoScheduleTasks()" title="Распределить задачи по учебным дням">📅 AI-план недели</button>
+        <button class="chip chip-action" onclick="autoPrioritize()" id="urgencyPrioChip" title="расставить приоритеты по срочности и сложности">⚡ по срочности</button>
+        <button class="chip active" id="filterAllChip" data-f="all" onclick="setFilter('all', this)" aria-pressed="true">все задачи</button>
+        <button class="chip" id="filterSmartChip" data-f="smart" onclick="setFilter('smart', this)" aria-pressed="false">умная</button>
       </div>
       <div id="tasksList"></div>
     </section>
@@ -2048,15 +2054,16 @@
     async function handleSignIn() {
       if (!sbClient) return showToast('supabase не подключен', '!');
       const email = $('auth-email').value.trim();
-      const password = $('auth-password').value.trim();
-      if (!email || !password) return showToast('введите email и пароль', '!');
+      const password = $('auth-password').value;
+      if (!email || !password.trim()) {
+        return showToast('введите email и пароль', '!');
+      }
       const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
       if (error) {
         showToast('ошибка входа: ' + error.message, '!');
       } else {
         showToast('успешный вход в облако');
         _cloudSyncToastShown = false;
-        checkUser();
       }
     }
 
@@ -2193,8 +2200,7 @@
           return;
         }
 
-        // 3. Оба источника с данными → возможно конфликт
-        // Если пользователь уже делал выбор ранее — уважаем его
+        // 3. Оба источника с данными
         let savedDecision = '';
         try { savedDecision = readRaw('ep_sync_decision_' + userId) || ''; } catch (e) {}
 
@@ -2222,19 +2228,63 @@
     let _pendingConflict = null;
 
     function countDataStats(payload) {
-      if (!payload) return { tasks: 0, archive: 0, schedule: 0 };
-      let tasks = 0, archive = 0, schedule = 0;
-      try { tasks = JSON.parse(payload.ep_tasks || '[]').length || 0; } catch {}
-      try { archive = JSON.parse(payload.ep_archive || '[]').length || 0; } catch {}
+      const stats = {
+        tasks: 0,
+        archive: 0,
+        schedule: 0,
+        focusDays: 0,
+        focusMs: 0
+      };
+
+      if (!payload || typeof payload !== 'object') return stats;
+
       try {
-        const s = JSON.parse(payload.ep_sched || '{}');
-        for (const k of Object.keys(s)) if (Array.isArray(s[k])) schedule += s[k].length;
+        const tasks = JSON.parse(payload.ep_tasks || '[]');
+        stats.tasks = Array.isArray(tasks) ? tasks.length : 0;
       } catch {}
-      return { tasks, archive, schedule };
+
+      try {
+        const archive = JSON.parse(payload.ep_archive || '[]');
+        stats.archive = Array.isArray(archive) ? archive.length : 0;
+      } catch {}
+
+      try {
+        const schedule = JSON.parse(payload.ep_sched || '{}');
+
+        if (schedule && typeof schedule === 'object') {
+          for (const day of Object.keys(schedule)) {
+            if (Array.isArray(schedule[day])) {
+              stats.schedule += schedule[day].length;
+            }
+          }
+        }
+      } catch {}
+
+      try {
+        const focus = JSON.parse(payload.ep_focus || '{}');
+
+        if (focus && typeof focus === 'object' && !Array.isArray(focus)) {
+          for (const value of Object.values(focus)) {
+            const ms = Number(value);
+
+            if (Number.isFinite(ms) && ms > 0) {
+              stats.focusDays++;
+              stats.focusMs += ms;
+            }
+          }
+        }
+      } catch {}
+
+      return stats;
     }
 
     function hasData(stats) {
-      return stats.tasks > 0 || stats.archive > 0 || stats.schedule > 0;
+      return (
+        stats.tasks > 0 ||
+        stats.archive > 0 ||
+        stats.schedule > 0 ||
+        stats.focusMs > 0
+      );
     }
 
     function buildLocalPayload() {
@@ -2254,7 +2304,9 @@
       _pendingConflict = { cloudPayload, localPayload, userId };
       const cloudStats = countDataStats(cloudPayload);
       const localStats = countDataStats(localPayload);
-      const fmt = (s) => `${s.tasks} задач · ${s.archive} в архиве · ${s.schedule} уроков`;
+      const fmt = (s) =>
+        `${s.tasks} задач · ${s.archive} в архиве · ` +
+        `${s.schedule} уроков · фокус: ${Math.round(s.focusMs / 60000)} мин`;
       $('syncCloudStats').textContent = fmt(cloudStats);
       $('syncLocalStats').textContent = fmt(localStats);
       showModal($('syncConflictModal'), null);
@@ -2715,6 +2767,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       $('toastIcon').textContent = icon;
       $('toastIcon').hidden = !icon;
       pendingUndo = undoAction;
+      $('toastUndo').textContent = (undoAction && undoAction.label) ? undoAction.label : 'отменить';
       $('toastUndo').hidden = !undoAction;
       t.classList.toggle('undoable', !!undoAction);
       clearTimeout(toastTimer);
@@ -2733,6 +2786,11 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const action = pendingUndo;
       if (!action) return;
       pendingUndo = null;
+      if (typeof action.run === 'function') {
+        restoreBrand();
+        action.run();
+        return;
+      }
       if (action.type === 'delete') {
         if (state.tasks.some(task => task.id === action.task.id)) {
           showToast('задача уже есть в плане', 'i');
@@ -2905,39 +2963,32 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
          cloudSyncTimer = setTimeout(async () => {
            const generation = cloudSyncGeneration;
            cloudSyncPromise = cloudSyncPromise.then(async () => {
-             if (resetting || generation !== cloudSyncGeneration) return;
-             const latestData = buildStoragePayload();
-             setSyncStatus('syncing');
-             try {
-               const { data: authData, error: authError } = await sbClient.auth.getUser();
-               if (authError) throw authError;
-               const user = authData?.user;
-               if (!user) {
-                 setSyncStatus('offline');
-                 return;
-               }
-               const { data: existing, error: lookupError } = await sbClient
-                 .from('user_data')
-                 .select('id')
-                 .eq('user_id', user.id)
-                 .maybeSingle();
-               if (lookupError) throw lookupError;
-               if (resetting || generation !== cloudSyncGeneration) return;
-
-               if (existing) {
-                 const { error } = await sbClient
-                   .from('user_data')
-                   .update({ payload: latestData, updated_at: new Date().toISOString() })
-                   .eq('user_id', user.id);
-                 if (error) throw error;
-               } else {
-                 const { error } = await sbClient
-                   .from('user_data')
-                   .insert([{ user_id: user.id, payload: latestData }]);
-                 if (error) throw error;
-               }
-               console.log('данные синхронизированы с облаком Supabase');
-               setSyncStatus('saved');
+              if (resetting || generation !== cloudSyncGeneration) return;
+              const latestData = buildStoragePayload();
+              setSyncStatus('syncing');
+              try {
+                const { data: authData, error: authError } = await sbClient.auth.getUser();
+                if (authError) throw authError;
+                const user = authData?.user;
+                if (!user) {
+                  setSyncStatus('offline');
+                  return;
+                }
+                const { error: saveError } = await sbClient
+                  .from('user_data')
+                  .upsert(
+                    {
+                      user_id: user.id,
+                      payload: latestData,
+                      updated_at: new Date().toISOString()
+                    },
+                    {
+                      onConflict: 'user_id'
+                    }
+                  );
+                if (saveError) throw saveError;
+                console.log('данные синхронизированы с облаком Supabase');
+                setSyncStatus('saved');
              } catch (err) {
                console.error('ошибка облачной синхронизации:', err);
                const { data: authData } = await sbClient.auth.getUser().catch(() => ({ data: {} }));
@@ -3340,6 +3391,20 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
   return obj;
 }
 
+    // Проверка на дубликат: совпадение предмета, текста (нормализованного), срока и сложности
+    function hasDuplicateTask(task, excludeId = null) {
+      const normText = task.text.toLowerCase().trim();
+      const normDue = (task.due || '').trim();
+      const normSubj = task.subj.toLowerCase().trim();
+      return state.tasks.some(t => {
+        if (excludeId && t.id === excludeId) return false;
+        return t.subj.toLowerCase().trim() === normSubj
+          && t.text.toLowerCase().trim() === normText
+          && (t.due || '').trim() === normDue
+          && t.comp === task.comp;
+      });
+    }
+
         function normalizeTaskList(v) {
       if (!Array.isArray(v)) return [];
       const seen = new Set();
@@ -3556,9 +3621,26 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function renderAll() { renderOverview(); renderSchedule(); renderTasks(); renderArchive(); fillSettings(); }
 
     // ---------- Фокус и статистика ----------
-    function addFocus(ms) {
-      const k = getLocalToday();
-      state.focus[k] = (state.focus[k] || 0) + ms;
+    function addFocusRange(startTs, endTs) {
+      let cursor = startTs;
+
+      while (cursor < endTs) {
+        const date = new Date(cursor);
+
+        const nextMidnight = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate() + 1
+        ).getTime();
+
+        const segmentEnd = Math.min(endTs, nextMidnight);
+        const dayKey = getLocalToday(date);
+
+        state.focus[dayKey] =
+          (state.focus[dayKey] || 0) + (segmentEnd - cursor);
+
+        cursor = segmentEnd;
+      }
     }
     function periodStartStr(kind) {
       if (kind === 'all') return '';
@@ -3706,6 +3788,109 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       showToast(critical
         ? `приоритеты обновлены, «очень срочных»: ${critical}`
         : 'приоритеты расставлены по срочности');
+    }
+
+    // AI-приоритизация: нейросеть оценивает срочность и важность
+    async function aiPrioritizeTasks() {
+      if (!state.tasks.length) { showToast('список задач пуст', 'i'); return; }
+      if (!sbClient || !navigator.onLine) {
+        showToast('AI недоступен офлайн', '!');
+        return;
+      }
+      if (!isAiAvailable()) {
+        showAiRateLimitWarning();
+        return;
+      }
+      try {
+        recordAiRequest();
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: {
+            action: 'prioritize',
+            today: getLocalToday(),
+            tasks: state.tasks.map(t => ({ id: t.id, subj: t.subj, text: t.text, due: t.due, comp: t.comp }))
+          },
+          timeout: 60000
+        });
+        if (state.aiDisabled || aiUnreachable) return;
+        if (result.error) throw result.error;
+        const priorities = result.data?.priorities || result.data?.task_priorities || [];
+        if (!Array.isArray(priorities) || !priorities.length) throw new Error('AI не вернул приоритеты');
+        let changed = 0;
+        for (const p of priorities) {
+          const task = state.tasks.find(t => t.id === p.id);
+          if (task && p.prio && ['urgent', 'important', 'normal', 'later'].includes(p.prio)) {
+            task.prio = p.prio;
+            changed++;
+          }
+        }
+        save();
+        renderAll();
+        showToast(changed ? 'приоритеты расставлены нейросетью ✨' : 'приоритеты уже актуальны');
+      } catch (err) {
+        console.error('ошибка AI-приоритизации:', err);
+        triggerAiCooldown(1);
+        showToast('ошибка AI-запроса', '!', 6000, {
+          label: 'повторить',
+          run: () => {
+            state.aiCooldownUntil = 0;
+            aiPrioritizeTasks();
+          }
+        });
+      }
+    }
+
+    // AI-автопланировщик: распределение задач по дням недели
+    async function aiAutoScheduleTasks() {
+      if (!state.tasks.length) { showToast('список задач пуст', 'i'); return; }
+      if (!sbClient || !navigator.onLine) {
+        showToast('AI недоступен офлайн', '!');
+        return;
+      }
+      if (!isAiAvailable()) {
+        showAiRateLimitWarning();
+        return;
+      }
+      try {
+        recordAiRequest();
+        const result = await sbClient.functions.invoke('ai-coach', {
+          body: {
+            action: 'auto_schedule',
+            schedule: state.schedule,
+            tasks: state.tasks.map(t => ({ id: t.id, subj: t.subj, text: t.text, due: t.due }))
+          },
+          timeout: 60000
+        });
+        if (state.aiDisabled || aiUnreachable) return;
+        if (result.error) throw result.error;
+        const assignments = result.data?.assignments || result.data?.task_days || [];
+        if (!Array.isArray(assignments) || !assignments.length) throw new Error('AI не вернул распределение');
+        const msg = `AI распределил ${assignments.length} задач по учебным дням на основе расписания уроков.\n\nПрименить новый план?`;
+        if (!confirm(msg)) {
+          showToast('план отменён');
+          return;
+        }
+        let changed = 0;
+        for (const a of assignments) {
+          const task = state.tasks.find(t => t.id === a.id);
+          if (task && a.day && ['1', '2', '3', '4', '5'].includes(String(a.day))) {
+            task.day = String(a.day);
+            changed++;
+          }
+        }
+        save();
+        renderAll();
+        showToast(changed ? `задачи распределены по учебным дням (${changed})` : 'распределение не изменило ни одну задачу');
+      } catch (err) {
+        console.error('ошибка AI-автопланировщика:', err);
+        triggerAiCooldown(1);
+        showToast('ошибка AI-запроса', '!', 6000, {
+          label: 'повторить',
+          run: () => {
+            state.aiCooldownUntil = 0;
+            aiAutoScheduleTasks();
+          }
+        });
+      }
     }
 
     function setPeriod(kind, btn) {
@@ -3887,7 +4072,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       try {
         recordAiRequest();
         const result = await sbClient.functions.invoke('ai-coach', {
-          body: { action: 'parse_raw', rawText: rawText, today: getLocalToday() }
+          body: { action: 'parse_raw', rawText: rawText, today: getLocalToday() },
+          timeout: 60000
         });
         if (state.aiDisabled) return;
         if (result.error) throw result.error;
@@ -3914,20 +4100,37 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           if (!day) day = String(state.curDay || 1);
           return normalizeTask(Object.assign({}, rawTask, { id: id, day: day, due: due, repeat: null }));
         }).filter(Boolean);
-        if (!tasks.length) throw new Error('в тексте не найдено заданий');
-        if (tasks.length > 150 - state.tasks.length) throw new Error('в плане недостаточно места для всех найденных заданий');
-        state.tasks.push(...tasks);
+        // Убираем дубликаты: совпадение subj + text + due + comp
+        const seen = new Set();
+        const uniqueTasks = tasks.filter(t => {
+          const key = `${t.subj.toLowerCase().trim()}|${t.text.toLowerCase().trim()}|${(t.due||'').trim()}|${t.comp}`;
+          if (seen.has(key) || hasDuplicateTask(t)) return false;
+          seen.add(key);
+          return true;
+        });
+        const dupCount = tasks.length - uniqueTasks.length;
+        if (!uniqueTasks.length) throw new Error('в тексте не найдено заданий');
+        if (uniqueTasks.length > 150 - state.tasks.length) throw new Error('в плане недостаточно места для всех найденных заданий');
+        state.tasks.push(...uniqueTasks);
         save();
         renderAll();
         $('batchAiText').value = '';
         batchAiPending = false;
         hideModal($('batchAiModal'));
         tab('tasks', navBtn('tasks'));
-        showToast('добавлено задач: ' + tasks.length);
+        const addedMsg = dupCount ? `добавлено задач: ${uniqueTasks.length} (пропущено дублей: ${dupCount})` : `добавлено задач: ${uniqueTasks.length}`;
+        showToast(addedMsg);
       } catch (error) {
         console.error('ошибка разбора текста с заданиями:', error);
         triggerAiCooldown(1);
-        showToast(error && error.message || 'не удалось разобрать текст', '!');
+        const errMsg = error && error.message || 'не удалось разобрать текст';
+        showToast('ошибка AI-запроса', '!', 6000, {
+          label: 'повторить',
+          run: () => {
+            state.aiCooldownUntil = 0;
+            importBatchAiTasks(e);
+          }
+        });
       } finally {
         batchAiPending = false;
         submit.disabled = false;
@@ -3975,6 +4178,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         repeat: $('addRepeat').checked ? 'weekly' : null
       });
       if (!task) { showToast('не удалось сохранить задание', '!'); return; }
+      if (hasDuplicateTask(task)) { showToast('такая задача уже существует', 'i'); return; }
       state.tasks.push(task);
       save();
       $('addText').value = '';
@@ -4041,7 +4245,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       try {
         recordAiRequest();
         const result = await sbClient.functions.invoke('ai-coach', {
-          body: { action: 'decompose', subject: task.subj, task: task.text, targetMinutes: totalMinutes }
+          body: { action: 'decompose', subject: task.subj, task: task.text, targetMinutes: totalMinutes },
+          timeout: 60000
         });
         if (state.aiDisabled) return;
         if (result.error) throw result.error;
@@ -4067,7 +4272,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           currentTask.subtasksSource = 'local';
           save();
           renderTasks();
-          showToast('шаги задания готовы (локальный план)');
+          showToast('ошибка AI-запроса', '!', 6000, {
+            label: 'повторить',
+            run: () => {
+              state.aiCooldownUntil = 0;
+              decomposeTask(id, button);
+            }
+          });
         }
       } finally {
         decomposingTaskIds.delete(id);
@@ -4197,11 +4408,12 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         const isActive = timerIsActive() && tState.id === t.id;
         const card = buildTaskCardHtml(t, index, isActive);
         const nextComp = list[index + 1]?.comp || t.comp || 'medium';
+        const breakMins = getBreakDurationMinutes(nextComp);
         const breakCard = index < list.length - 1 && index % 2 === 0
           ? `<div class="break-card">
               <div style="min-width:0;">
                 <span class="badge" style="background:rgba(6,214,160,0.16);color:var(--success);font-weight:800;">перерыв и разминка</span>
-                <span style="font-size:12px;color:var(--muted);margin-left:6px;">глаза, шея и спина (${COMP[nextComp].text})</span>
+                <span style="font-size:12px;color:var(--muted);margin-left:6px;">глаза, шея и спина (${breakMins} мин)</span>
               </div>
               <button class="btn-act btn-success" onclick="startStandaloneBreak('${nextComp}')">размяться</button>
             </div>`
@@ -4348,6 +4560,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         subtasksSource: state.tasks[idx].subtasksSource
       });
       if (!fixed) { showToast('не удалось сохранить изменения', '!'); return; }
+      if (hasDuplicateTask(fixed, fixed.id)) {
+        showToast('такая задача уже существует в плане', 'i');
+        return;
+      }
       state.tasks[idx] = fixed;
       save();
       closeEditModal();
@@ -4403,8 +4619,8 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     let timerDigitsHidden = false;
 
     // ---------- Circuit Breaker для AI ----------
-    // Лимит: 5 AI-запросов за 60 секунд
-    const AI_RATE_LIMIT = 5;
+    // Гибкий лимит: читается из localStorage, по умолчанию 5
+    const AI_RATE_LIMIT = parseInt(readRaw('ep_debug_ai_limit'), 10) || 5;
     const AI_RATE_WINDOW = 60 * 1000; // 1 минута
     let aiRequestTimestamps = [];
 
@@ -4428,6 +4644,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
     function isAiAvailable() {
       return !state.aiDisabled
+        && !aiUnreachable
         && navigator.onLine
         && Boolean(sbClient)
         && Date.now() > state.aiCooldownUntil
@@ -4452,7 +4669,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       const remaining = getAiRemainingRequests();
       if (remaining === 0) {
         const resetSec = Math.max(1, Math.ceil(getAiResetInMs() / 1000));
-        showToast(`лимит AI (5/мин) исчерпан — подождите ${resetSec} сек`, '⏱', 6000);
+        showToast(`лимит AI (${AI_RATE_LIMIT}/мин) исчерпан — подождите ${resetSec} сек`, '⏱', 6000);
         return;
       }
       if (Date.now() <= state.aiCooldownUntil) {
@@ -4460,7 +4677,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         showToast(`AI временно на паузе после ошибки сети (~${leftMin} мин)`, '⏱', 5000);
         return;
       }
-      showToast(`⚡ AI: осталось ${remaining} из 5 за мин`, '⏱', 3000);
+      showToast(`⚡ AI: осталось ${remaining} из ${AI_RATE_LIMIT} за мин`, '⏱', 3000);
     }
 
     function stopInterval() { clearInterval(timerInt); timerInt = null; }
@@ -4761,7 +4978,16 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       if (tState.running) {
         syncTimer();
-        tState.running = false;
+        // сохраняем остаток упражнения при ручной паузе
+        if (tState.phase === 'break' && breakStepEndAt > 0) {
+          breakStepLeftMs = Math.max(0, breakStepEndAt - Date.now());
+          breakStepEndAt = 0;
+        }
+        if (tState.phase === 'break' && breakStepPauseUntil > Date.now()) {
+          tState.pausePrepLeft = breakStepPauseUntil - Date.now();
+        } else {
+          tState.pausePrepLeft = 0;
+        }
         stopInterval();
         save();
         setTimerBtn(false);
@@ -4770,6 +4996,10 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
         tState.running = true;
         tState.lastTs = Date.now();
         tState.endAt = tState.lastTs + tState.leftMs;
+        if (tState.phase === 'break' && tState.pausePrepLeft > 0) {
+          breakStepPauseUntil = Date.now() + tState.pausePrepLeft;
+          tState.pausePrepLeft = 0;
+        }
         stopInterval();
         timerInt = setInterval(tick, 500);
         setTimerBtn(true);
@@ -4811,6 +5041,9 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       tState.minimized = false;
       hideIsland();
 
+      if (tState.running) {
+        void keepAwake(true);
+      }
 
       const v = $('timerView');
       v.classList.remove('mini');
@@ -5336,6 +5569,49 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       }
     }
 
+    function safeSessionGet(key) {
+      try {
+        return sessionStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    }
+
+    function safeSessionSet(key, value) {
+      try {
+        sessionStorage.setItem(key, value);
+      } catch {}
+    }
+
+    function safeSessionRemove(key) {
+      try {
+        sessionStorage.removeItem(key);
+      } catch {}
+    }
+
+    function makeReviewCacheKey() {
+      const snapshot = JSON.stringify({
+        period: state.period,
+        tasks: state.tasks.map(t => [
+          t.id, t.subj, t.text, t.due, t.prio, t.comp
+        ]),
+        archive: state.archive.map(a => [
+          a.id, a.closedAt, a.closedReason
+        ]),
+        focus: state.focus,
+        doneTotal: state.doneTotal
+      });
+
+      let hash = 2166136261;
+
+      for (let i = 0; i < snapshot.length; i++) {
+        hash ^= snapshot.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+
+      return `ai_rev_${state.period}_${getLocalToday()}_${(hash >>> 0).toString(36)}`;
+    }
+
     async function requestAIDayReview() {
       if (!isAiAvailable()) {
         showAiRateLimitWarning();
@@ -5352,38 +5628,98 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       btn.classList.add('refresh-spin');
       const indicator = $('dayReviewIndicator');
       if (indicator) indicator.style.display = 'none';
-      $('aiDayReviewText').innerHTML = '<span class="ai-inline-spinner"></span>анализирую день…';
-       try {
-         recordAiRequest();
-         const todayFocusMin = Math.round((state.focus[getLocalToday()] || 0) / 60000);
-         const result = await sbClient.functions.invoke('ai-coach', {
-          body: {
-            action: 'review_day',
-            completedCount: (state.archive || []).filter(a => a.closedAt === getLocalToday() && a.closedReason === 'completed').length,
-            totalCompleted: state.doneTotal,
-            focusTime: `${todayFocusMin} мин`,
-            overdueCount: state.tasks.filter(isOverdue).length,
-            openCount: state.tasks.length
+       $('aiDayReviewText').innerHTML = '<span class="ai-inline-spinner"></span>анализирую…';
+
+        // Кэширование с учётом периода
+        const cacheKey = `ai_rev_${state.period}_${getLocalToday()}_${state.tasks.length}_${state.archive.length}`;
+        const cachedText = sessionStorage.getItem(cacheKey);
+        if (cachedText) {
+          $('aiDayReviewText').textContent = cachedText;
+          if (indicator) {
+            indicator.className = 'ai-dot ai-dot-ai';
+            indicator.style.display = 'inline-block';
+            indicator.title = 'ответ AI';
           }
-        });
-        if (state.aiDisabled || aiUnreachable) return;
-        if (result.error) throw result.error;
-        const text = result.data?.comment || result.data?.summary || result.data?.text || 'Пока нет данных для сводки.';
-        $('aiDayReviewText').textContent = text;
-        if (indicator) {
-          indicator.className = 'ai-dot ai-dot-ai';
-          indicator.style.display = 'inline-block';
-          indicator.title = 'ответ AI';
+          btn.disabled = false;
+          btn.classList.remove('refresh-spin');
+          return;
         }
-      } catch (err) {
-        console.error('ошибка AI-сводки дня:', err);
-        triggerAiCooldown(1);
-        $('aiDayReviewText').textContent = 'Не удалось получить сводку. Попробуйте ещё раз.';
-        showToast('Не удалось получить AI-сводку', '!');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('refresh-spin');
-      }
+
+        try {
+           recordAiRequest();
+           const todayFocusMin = Math.round((state.focus[getLocalToday()] || 0) / 60000);
+
+           let reviewAction, reviewBody;
+           if (state.period === 'week') {
+             // Подсчёт активных дней, времени фокуса и закрытых задач за текущую неделю
+             const now = new Date();
+             const dayOfWeek = now.getDay() || 7;
+             const weekStart = new Date(now);
+             weekStart.setDate(now.getDate() - dayOfWeek + 1);
+             const weekStartStr = getLocalToday(weekStart);
+             let activeDays = 0;
+             let weekFocusMs = 0;
+             for (let d = 0; d < 7; d++) {
+               const date = new Date(weekStart);
+               date.setDate(weekStart.getDate() + d);
+               const ds = getLocalToday(date);
+               const dayFocus = state.focus[ds] || 0;
+               const dayDone = (state.archive || []).some(a => a.closedReason !== 'overdue' && a.closedAt === ds);
+               if (dayFocus > 0 || dayDone) activeDays++;
+               weekFocusMs += dayFocus;
+             }
+             const weekCompleted = (state.archive || []).filter(
+               a => a.closedReason !== 'overdue' && a.closedAt && a.closedAt >= weekStartStr
+             ).length;
+             reviewAction = 'review_week';
+             reviewBody = {
+               completedCount: weekCompleted,
+               totalCompleted: state.doneTotal,
+               focusTime: fmtMs(weekFocusMs),
+               activeDays: `${activeDays} из 7`,
+               openCount: state.tasks.length
+             };
+           } else {
+             reviewAction = 'review_day';
+             reviewBody = {
+               completedCount: (state.archive || []).filter(a => a.closedAt === getLocalToday() && a.closedReason === 'completed').length,
+               totalCompleted: state.doneTotal,
+               focusTime: `${todayFocusMin} мин`,
+               overdueCount: state.tasks.filter(isOverdue).length,
+               openCount: state.tasks.length
+             };
+           }
+
+            const result = await sbClient.functions.invoke('ai-coach', {
+              body: { action: reviewAction, ...reviewBody },
+              timeout: 60000
+            });
+           if (state.aiDisabled || aiUnreachable) return;
+           if (result.error) throw result.error;
+           const text = result.data?.comment || result.data?.summary || result.data?.text || 'Пока нет данных для сводки.';
+           $('aiDayReviewText').textContent = text;
+            safeSessionSet(cacheKey, text);
+           if (indicator) {
+             indicator.className = 'ai-dot ai-dot-ai';
+             indicator.style.display = 'inline-block';
+             indicator.title = 'ответ AI';
+           }
+         } catch (err) {
+          console.error('ошибка AI-сводки:', err);
+          triggerAiCooldown(1);
+          $('aiDayReviewText').textContent = 'Не удалось получить сводку. Попробуйте ещё раз.';
+          showToast('ошибка AI-запроса', '!', 6000, {
+            label: 'повторить',
+            run: () => {
+              state.aiCooldownUntil = 0;
+              sessionStorage.removeItem(cacheKey);
+              requestAIDayReview();
+            }
+          });
+        } finally {
+         btn.disabled = false;
+         btn.classList.remove('refresh-spin');
+       }
     }
 
     function checkAIAvailability() {
@@ -5585,6 +5921,13 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
     function updateAIFeatureVisibility() {
       document.body.classList.toggle('ai-disabled', state.aiDisabled);
       document.body.classList.toggle('ai-unavailable', aiUnreachable);
+      const aiAvailable = isAiAvailable();
+      const urgencyChip = $('urgencyPrioChip');
+      if (urgencyChip) urgencyChip.style.display = aiAvailable ? 'none' : '';
+      const filterAll = $('filterAllChip');
+      if (filterAll) filterAll.style.display = aiAvailable ? 'none' : '';
+      const filterSmart = $('filterSmartChip');
+      if (filterSmart) filterSmart.style.display = aiAvailable ? 'none' : '';
     }
 
     function toggleAIFeaturesDisabled(disabled) {
@@ -5951,7 +6294,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
                 body: { action: 'parse_schedule', csvText: csvText.slice(0, 10000) }
               });
               const timeout = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => reject(new Error('AI не ответил за 15 секунд')), 15000);
+                timeoutId = setTimeout(() => reject(new Error('AI не ответил за 30 секунд')), 30000);
               });
               const { data: aiData, error } = await Promise.race([aiCall, timeout]);
               clearTimeout(timeoutId);
@@ -6119,15 +6462,49 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
           clearTimeout(cloudSyncTimer);
           cloudSyncTimer = null;
           cloudSyncGeneration += 1;
+
           await cloudSyncPromise;
-          
+
           const { data, error: authError } = await sbClient.auth.getUser();
-          if (!authError && data?.user) {
-            await sbClient.from('user_data').delete().eq('user_id', data.user.id);
+
+          if (authError) throw authError;
+
+          if (data?.user) {
+            const userId = data.user.id;
+
+            const { data: existing, error: lookupError } = await sbClient
+              .from('user_data')
+              .select('id')
+              .eq('user_id', userId)
+              .maybeSingle();
+
+            if (lookupError) throw lookupError;
+
+            if (existing) {
+              const { data: deletedRows, error: deleteError } = await sbClient
+                .from('user_data')
+                .delete()
+                .eq('user_id', userId)
+                .select('id');
+
+              if (deleteError) throw deleteError;
+
+              if (!deletedRows || deletedRows.length === 0) {
+                throw new Error('supabase не подтвердил удаление облачной записи');
+              }
+            }
           }
         } catch (err) {
-          console.warn('Не удалось удалить данные из облака (возможно, нет сессии):', err);
-          // Не прерываем выполнение, идем дальше чистить локальное
+          resetting = false;
+
+          console.error('ошибка удаления облачных данных:', err);
+
+          showToast(
+            'не удалось удалить копию из облака. локальные данные не удалены',
+            '!'
+          );
+
+          return;
         }
       }
 
@@ -6235,24 +6612,43 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
 
       let pressTimer = null;
       let pressTaskId = null;
+      let pressStartX = 0;
+      let pressStartY = 0;
 
       $('tasksList').addEventListener('touchstart', e => {
+        if (e.touches.length !== 1) return;
         const card = e.target.closest('.task-card');
-        if (!card || e.target.closest('button, input, label')) return;
+        if (!card || e.target.closest('button, input, label, .task-subtasks')) return;
         pressTaskId = card.querySelector('[data-act="done"]')?.dataset.id;
         if (!pressTaskId) return;
+        pressStartX = e.touches[0].clientX;
+        pressStartY = e.touches[0].clientY;
         pressTimer = setTimeout(() => {
           if (navigator.vibrate) navigator.vibrate(30);
           completeTaskById(pressTaskId);
           pressTimer = null;
-        }, 600);
+        }, 650);
       }, { passive: true });
 
-      ['touchend', 'touchmove', 'touchcancel'].forEach(evt => {
+      $('tasksList').addEventListener('touchmove', e => {
+        if (!pressTimer || !e.touches[0]) return;
+        const dx = Math.abs(e.touches[0].clientX - pressStartX);
+        const dy = Math.abs(e.touches[0].clientY - pressStartY);
+        if (dx > 8 || dy > 8) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      }, { passive: true });
+
+      ['touchend', 'touchcancel'].forEach(evt => {
         $('tasksList').addEventListener(evt, () => {
           if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
         }, { passive: true });
       });
+
+      window.addEventListener('scroll', () => {
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      }, { passive: true });
 
       $('setSchoolStart').addEventListener('change', e => {
         state.schoolStart = e.target.value || '08:00';
@@ -6432,74 +6828,32 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       {
         tab: 'overview',
         getTarget: () => navBtn('overview'),
-        title: '📊 Главный экран',
-        text: 'Твой пульс дня: сколько задач висит, сколько закрыто и расписание на неделю.'
+        title: '📊 Обзор',
+        text: 'Пульс дня: открытые задачи, просроченные, прогресс и AI-итог.'
       },
       {
         tab: 'add',
         getTarget: () => $('addText'),
         title: '✨ Умный ввод',
-        text: 'Пиши как другу: «завтра алгебра номер 45» — предмет, сложность и дата определятся сами.'
+        text: 'Пиши как другу: «завтра алгебра номер 45» — предмет, сложность и срок определятся сами.'
       },
       {
         tab: 'schedule',
         getTarget: () => document.querySelector('#view-schedule .glass[onclick*="importScheduleFileTop"]'),
-        title: '📅 Расписание уроков',
-        text: 'Забей уроки на неделю руками или закинь файл расписания из электронного дневника.'
-      },
-      {
-        tab: 'tasks',
-        getTarget: () => document.querySelector('#filterChips .chip-action'),
-        title: '⚡ Сортировка дел',
-        text: 'Одна кнопка — и горящие дедлайны со сложными предметами взлетают на самый верх.'
+        title: '📅 Расписание',
+        text: 'Введи уроки вручную или импортируй файл из электронного дневника.'
       },
       {
         tab: 'tasks',
         getTarget: () => document.querySelector('[data-act="focus"]') || $('tasksList'),
         title: '🎯 Фокус-таймер',
-        text: 'Запускай таймер на задаче. После работы StudyFlow сам подберет разминку под нагрузку.'
+        text: 'Запусти таймер на задаче. AI разобьёт её на шаги и подберёт разминку после работы.'
       },
       {
         tab: 'overview',
         getTarget: () => $('toast'),
         title: '⚡ Dynamic Island',
-        text: 'Сверни таймер — он втянется в эту верхнюю капсулу и не будет закрывать приложение.'
-      },
-      {
-        tab: 'overview',
-        getTarget: () => document.querySelector('.dock-settings-btn'),
-        title: '🎨 Твой стиль и облако',
-        text: 'Здесь живут темы Liquid Glass, вход в аккаунт и переключатели режимов.'
-      },
-      {
-        tab: 'tasks',
-        getTarget: () => document.querySelector('[data-act="decompose"]') || $('tasksList'),
-        title: '🧩 AI-разбивка на шаги',
-        text: 'Нажми «шаги» на задаче — AI разобьёт её на подзадачи с таймингами. Работает даже офлайн.'
-      },
-      {
-        tab: 'overview',
-        getTarget: () => document.querySelector('#btnRefreshDayReview') || $('toast'),
-        title: '📋 AI-обзор дня',
-        text: 'Кнопка ↻ рядом с «Итого за день» — AI проанализирует прогресс и даст рекомендацию.'
-      },
-      {
-        tab: 'add',
-        getTarget: () => $('batchAiChip') || $('addText'),
-        title: '📝 AI из чата',
-        text: 'Кнопка «✨ вставить текст из чата» — вставь скриншот или текст из мессенджера, AI найдёт задания.'
-      },
-      {
-        tab: 'tasks',
-        getTarget: () => document.querySelector('[data-act="focus"]') || $('tasksList'),
-        title: '🧘 AI-разминка',
-        text: 'После фокуса AI подберёт упражнения под конкретную задачу: глаза, шея, спина, кисти.'
-      },
-      {
-        tab: 'overview',
-        getTarget: () => $('toast'),
-        title: '⏱ Лимит AI-запросов',
-        text: '5 AI-запросов в минуту — чтобы сервер не тормозил. Когда лимит исчерпан, таймер покажет обратный отсчёт. Попробуй прямо сейчас: нажми «шаги» на любой задаче.'
+        text: 'Сверни таймер — он втянется в эту капсулу. Настройки и темы — в кнопке ≡ внизу.'
       }
     ];
 
@@ -6553,6 +6907,7 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       bindEvents();
       initMiniDrag();
       checkAIAvailability();
+      updateAIFeatureVisibility();
             window.addEventListener('online', () => {
         checkAIAvailability();
         showToast('подключение к сети восстановлено', '🌐');
@@ -6794,15 +7149,6 @@ function generateSmartRoutine(query = '', cycle = 1, comp = 'normal_comp') {
       });
     }
 
-    // Запрет двойного тапа для зума на iOS
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-      const now = (new Date()).getTime();
-      if (now - lastTouchEnd <= 300) {
-        event.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, false);
   </script>
 </body>
 </html>
